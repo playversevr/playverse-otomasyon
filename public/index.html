@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playverse Pro v15 - Otomasyon</title>
+    <title>VR Pro v16 - Detaylı Raporlama</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         #sidebar { width: 360px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
@@ -38,7 +38,7 @@
 <body>
 
 <div id="sidebar">
-    <h2 style="color: #00fbff; margin-top:0;">🎮 Playverse Otomasyon</h2>
+    <h2 style="color: #00fbff; margin-top:0;">🎮 vr-kafe-panel</h2>
     
     <div style="background: #1e3a8a33; padding: 12px; border-radius: 10px;">
         <h4 style="margin:0 0 5px 0;">💰 Fiyat Ayarları (₺)</h4>
@@ -55,8 +55,8 @@
         <option value="Çay">Çay</option><option value="Kahve">Kahve</option><option value="Su">Su (15₺)</option>
     </select>
     <select id="hedef-masa">
-        <option value="1">Masa 1</option><option value="2">Masa 2</option><option value="3">Masa 3</option>
-        <option value="4">Masa 4</option><option value="5">Masa 5</option><option value="6">Masa 6</option>
+        <option value="1">VR Gözlük 1</option><option value="2">VR Gözlük 2</option><option value="3">VR Gözlük 3</option>
+        <option value="4">VR Gözlük 4</option><option value="5">VR Gözlük 5</option><option value="6">VR Gözlük 6</option>
         <option value="MISAFIR">👤 Dış Satış</option>
     </select>
     <button class="btn" style="background:#d97706" id="btn-urun-ekle">➕ Ekle</button>
@@ -96,7 +96,7 @@
 
     // Ürünleri gruplayıp (Örn: 3x Çay, 1x 30dk VR) metin olarak döndüren fonksiyon
     function urunleriOzetle(urunler) {
-        if (!urunler || urunler.length === 0) return 'İstasyon Boş';
+        if (!urunler || urunler.length === 0) return 'VR Gözlük Boş';
         let sayac = {};
         urunler.forEach(u => {
             sayac[u.ad] = (sayac[u.ad] || 0) + 1;
@@ -119,13 +119,12 @@
                 durum = cihazVerileri[i].odeme_alindi ? '<span class="status-badge paid">ÖDEME ALINDI ✅</span>' : '<span class="status-badge unpaid">ÖDEME BEKLENİYOR ⏳</span>';
             }
 
-            // Ekranda karmaşa olmaması için ürünleri grupla (Örn: 2x Çay)
             let urunMetni = urunleriOzetle(cihazVerileri[i].urunler);
 
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
                     ${durum}
-                    <h2 style="margin:0;">İstasyon #${i}</h2>
+                    <h2 style="margin:0;">VR Gözlük #${i}</h2>
                     <div class="timer" id="time-${i}">00:00</div>
                     <div style="margin-bottom:10px;">
                         Borç: <b style="font-size:18px;">${cihazVerileri[i].toplam}₺</b>
@@ -161,7 +160,9 @@
         
         if(h === "MISAFIR") {
             let yontem = confirm("Dış Satış Ödemesi:\nNakit için TAMAM, Kart için İPTAL seçin.") ? "NAKİT" : "KART";
-            raporKaydet("Dış Satış", tutar, yontem, `1x ${uTip}`);
+            // Düzeltme: tutar yerine fiyat değişkeni kullanıldı
+            raporKaydet("Dış Satış", fiyat, yontem, `1x ${uTip}`);
+            alert(`Dış Satış Raporlara Eklendi: ${uTip} (${fiyat}₺)`);
         } else {
             if(!cihazVerileri[h].urunler) cihazVerileri[h].urunler = [];
             cihazVerileri[h].urunler.push({ ad: uTip, fiyat: fiyat });
@@ -177,18 +178,16 @@
         
         let yontem = confirm(`${c.toplam}₺ ödeme yöntemi: \nNAKİT için TAMAM \nKART için İPTAL seçin.`) ? "NAKİT" : "KART";
         
-        // Ödeme alındığı andaki kalan dakikayı hesapla
         let kalanDk = 0;
         let fark = c.bitis_ms - new Date().getTime();
         if (fark > 0) {
             kalanDk = Math.floor(fark / 60000);
         }
         
-        // Ürünleri grupla (Örn: 2x Çay, 1x 30dk VR)
         let grupluUrunler = urunleriOzetle(c.urunler);
         let detayMetni = `${grupluUrunler} <br> ⏳ <b>Kalan Süre: ${kalanDk} Dakika</b>`;
         
-        raporKaydet(`Masa #${id}`, c.toplam, yontem, detayMetni);
+        raporKaydet(`VR Gözlük #${id}`, c.toplam, yontem, detayMetni);
         
         cihazVerileri[id].odeme_alindi = true;
         set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
@@ -201,7 +200,6 @@
         remove(ref(db, 'aktif_masalar/' + id));
     }
 
-    // Rapor kaydederken detay metnini de dahil ettik
     function raporKaydet(isim, tutar, yontem, detay) {
         push(ref(db, 'raporlar'), {
             isim: isim, 
