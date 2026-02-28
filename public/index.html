@@ -3,28 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VR Pro v13 - Profesyonel Yönetim</title>
+    <title>VR Pro v14 - Adisyon Sistemi</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         #sidebar { width: 360px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
         #main { flex: 1; padding: 25px; background: #0b0b0b; overflow-y: auto; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
         
+        /* Kart Tasarımı */
         .card { background: #1c1c1c; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; position: relative; border-top: 4px solid #2563eb; transition: 0.3s; }
         .card.sure-doldu { border-top-color: #ff3e3e; box-shadow: 0 0 20px rgba(255, 62, 62, 0.2); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         
+        /* DURUM ETİKETLERİ */
         .status-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         .unpaid { background: #d97706; color: white; } 
+        .paid { background: #16a34a; color: white; }
         
         .timer { font-size: 42px; font-weight: bold; color: #00fbff; margin: 10px 0; font-family: 'Courier New', monospace; }
         .btn { cursor: pointer; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 5px; color: white; transition: 0.2s; }
         .btn-vr { background: #2563eb; }
-        .btn-pay { background: #16a34a; font-size: 16px; margin-top:10px; border-bottom: 3px solid #15803d; }
+        .btn-pay { background: #16a34a; font-size: 14px; margin-top:10px; border-bottom: 3px solid #116631; }
+        .btn-close { background: #4b5563; font-size: 14px; margin-top:5px; border-bottom: 3px solid #374151; }
         .btn-delete { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; }
         
         .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; border: 1px solid #333; font-size: 12px; }
-        .accordion-content { display:none; background:#111; padding:10px; font-size:11px; border: 1px solid #333; border-top: none; color: #aaa; }
         .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; border: 1px solid #1e3a8a; margin-bottom: 15px; font-size: 14px; }
         
         input, select { background: #252525; color: white; border: 1px solid #444; padding: 8px; width: 100%; margin: 4px 0; border-radius: 6px; box-sizing: border-box; }
@@ -74,7 +77,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove, push, query, orderByChild, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCGk6ca-X8wCbLB7xOu5imiH6g23ZmazyQ",
@@ -94,23 +97,28 @@
         const grid = document.getElementById('cihazlar');
         grid.innerHTML = ''; 
         for(let i=1; i<=6; i++) {
-            if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, urunler: [], toplam: 0 };
-            let aktifMi = cihazVerileri[i].toplam > 0;
+            if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, urunler: [], toplam: 0, odeme_alindi: false };
+            let borcVar = cihazVerileri[i].toplam > 0;
+            let durum = "";
+            if (borcVar) {
+                durum = cihazVerileri[i].odeme_alindi ? '<span class="status-badge paid">ÖDEME ALINDI ✅</span>' : '<span class="status-badge unpaid">ÖDEME BEKLENİYOR ⏳</span>';
+            }
+
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
-                    ${aktifMi ? '<span class="status-badge unpaid">ÖDEME BEKLENİYOR</span>' : ''}
+                    ${durum}
                     <h2 style="margin:0;">İstasyon #${i}</h2>
                     <div class="timer" id="time-${i}">00:00</div>
                     <div style="margin-bottom:10px;">
                         Borç: <b style="font-size:18px;">${cihazVerileri[i].toplam}₺</b>
                         <div style="font-size:11px; opacity:0.5; margin-top:5px;">
-                            ${cihazVerileri[i].urunler ? cihazVerileri[i].urunler.map(u => u.ad).join(", ") : 'İstasyon Boş'}
+                            ${cihazVerileri[i].urunler ? cihazVerileri[i].urunler.map(u => u.ad).join(", ") : 'Masa Boş'}
                         </div>
                     </div>
                     <button class="btn btn-vr" onclick="vrEkle(${i},30)">+30 Dakika</button>
                     <button class="btn btn-vr" onclick="vrEkle(${i},60)">+60 Dakika</button>
-                    <button class="btn btn-pay" onclick="odemeAl(${i})">💰 ÖDEME AL & KAPAT</button>
-                    <button class="btn" style="background:#333; font-size:11px;" onclick="iptalEt(${i})">İptal / Sıfırla</button>
+                    <button class="btn btn-pay" onclick="odemeAl(${i})">💰 ÖDEME AL (MASA AÇIK KALIR)</button>
+                    <button class="btn btn-close" onclick="masaKapat(${i})">⏹️ MASAYI KAPAT / SIFIRLA</button>
                 </div>`;
         }
     }
@@ -119,10 +127,12 @@
         let fiyat = dk === 30 ? parseInt(document.getElementById('f-30').value) : parseInt(document.getElementById('f-60').value);
         let simdi = new Date().getTime();
         let temel = (cihazVerileri[id].bitis_ms > simdi) ? cihazVerileri[id].bitis_ms : simdi;
+        
         if(!cihazVerileri[id].urunler) cihazVerileri[id].urunler = [];
         cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
         cihazVerileri[id].urunler.push({ ad: `${dk}dk VR`, fiyat: fiyat });
         cihazVerileri[id].toplam += fiyat;
+        cihazVerileri[id].odeme_alindi = false; // Yeni ürün/süre eklenince ödeme durumu sıfırlanır
         set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
     }
 
@@ -132,27 +142,36 @@
         let fiyat = uTip === "Çay" ? parseInt(document.getElementById('f-cay').value) : (uTip === "Kahve" ? parseInt(document.getElementById('f-kahve').value) : 15);
         
         if(h === "MISAFIR") {
-            let yontem = confirm("Nakit ödeme için TAMAM, Kart için İPTAL seçin.") ? "NAKİT" : "KART";
+            let yontem = confirm("Nakit için TAMAM, Kart için İPTAL.") ? "NAKİT" : "KART";
             raporKaydet("Dış Satış: " + uTip, fiyat, yontem);
         } else {
             if(!cihazVerileri[h].urunler) cihazVerileri[h].urunler = [];
             cihazVerileri[h].urunler.push({ ad: uTip, fiyat: fiyat });
             cihazVerileri[h].toplam += fiyat;
+            cihazVerileri[h].odeme_alindi = false;
             set(ref(db, 'aktif_masalar/' + h), cihazVerileri[h]);
         }
     };
 
     window.odemeAl = function(id) {
         let c = cihazVerileri[id];
-        if(c.toplam === 0) return;
-        let yontem = confirm(`${c.toplam}₺ ödeme için: \nNAKİT ise TAMAM \nKART ise İPTAL seçin.`) ? "NAKİT" : "KART";
+        if(c.toplam === 0 || c.odeme_alindi) return;
         
-        let detay = c.urunler.map(u => u.ad).join(", ");
-        raporKaydet(`Masa #${id} (${detay})`, c.toplam, yontem);
-        remove(ref(db, 'aktif_masalar/' + id));
+        let yontem = confirm(`${c.toplam}₺ ödeme yöntemi: \nNAKİT için TAMAM \nKART için İPTAL seçin.`) ? "NAKİT" : "KART";
+        
+        raporKaydet(`Masa #${id}`, c.toplam, yontem);
+        
+        // Sadece ödeme durumunu güncelle, masayı silme
+        cihazVerileri[id].odeme_alindi = true;
+        set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
     }
 
-    window.iptalEt = function(id) { if(confirm("Sıfırlansın mı?")) remove(ref(db, 'aktif_masalar/' + id)); }
+    window.masaKapat = function(id) {
+        if(!cihazVerileri[id].odeme_alindi && cihazVerileri[id].toplam > 0) {
+            if(!confirm("Ödeme henüz alınmadı! Yine de masayı kapatmak istiyor musunuz? (Raporlanmaz)")) return;
+        }
+        remove(ref(db, 'aktif_masalar/' + id));
+    }
 
     function raporKaydet(isim, tutar, yontem) {
         push(ref(db, 'raporlar'), {
@@ -171,7 +190,6 @@
             
             let fark = cihazVerileri[i].bitis_ms - new Date().getTime();
             
-            // SÜRE DOLUNCA COUNTER DURDURMA MANTIĞI
             if (fark <= 0) {
                 tEl.innerText = "SÜRE DOLDU!";
                 document.getElementById(`card-${i}`).classList.add('sure-doldu');
@@ -186,49 +204,32 @@
 
     onValue(ref(db, 'aktif_masalar'), (snapshot) => {
         const data = snapshot.val();
-        for(let i=1; i<=6; i++) { cihazVerileri[i] = (data && data[i]) ? data[i] : { bitis_ms: 0, urunler: [], toplam: 0 }; }
+        for(let i=1; i<=6; i++) { cihazVerileri[i] = (data && data[i]) ? data[i] : { bitis_ms: 0, urunler: [], toplam: 0, odeme_alindi: false }; }
         cihazlariOlustur();
     });
 
-    // TARİH FİLTRELİ RAPORLAMA MANTIĞI
     function raporuGoster(baslangic, bitis) {
         onValue(ref(db, 'raporlar'), (snapshot) => {
             const data = snapshot.val();
             const liste = document.getElementById('rapor-listesi');
             const ozet = document.getElementById('rapor-ozet-alan');
-            liste.innerHTML = ''; 
-            let nakitT = 0; let kartT = 0;
-
+            liste.innerHTML = ''; let n = 0; let k = 0;
             if(data) {
                 Object.keys(data).reverse().forEach(key => {
                     let r = data[key];
                     if(r.tarih >= baslangic && r.tarih <= bitis) {
-                        if(r.yontem === "NAKİT") nakitT += r.tutar; else kartT += r.tutar;
-                        liste.innerHTML += `
-                        <div class="accordion-header">
-                            <span><b>${r.saat}</b> | ${r.isim.substring(0,15)}.. | ${r.yontem}</span>
-                            <span>${r.tutar}₺ <button class="btn-delete" onclick="raporSil('${key}')">X</button></span>
-                        </div>`;
+                        if(r.yontem === "NAKİT") n += r.tutar; else k += r.tutar;
+                        liste.innerHTML += `<div class="accordion-header"><span>${r.saat} | ${r.isim} | ${r.yontem}</span><span>${r.tutar}₺ <button class="btn-delete" onclick="raporSil('${key}')">X</button></span></div>`;
                     }
                 });
             }
-            ozet.innerHTML = `
-                <div class="rapor-ozet-box">
-                    💵 Nakit: <b style="color:#22c55e;">${nakitT}₺</b><br>
-                    💳 Kart: <b style="color:#3b82f6;">${kartT}₺</b><hr style="border:0; border-top:1px solid #333;">
-                    💰 Toplam: <b style="font-size:18px;">${nakitT + kartT}₺</b>
-                </div>`;
+            ozet.innerHTML = `<div class="rapor-ozet-box">💵 Nakit: <b>${n}₺</b><br>💳 Kart: <b>${k}₺</b><br>💰 Toplam: <b>${n+k}₺</b></div>`;
         });
     }
 
-    document.getElementById('btn-filtrele').onclick = () => {
-        raporuGoster(document.getElementById('filtre-bas').value, document.getElementById('filtre-bit').value);
-    };
-
-    // Açılışta bugünün raporunu getir
+    document.getElementById('btn-filtrele').onclick = () => { raporuGoster(document.getElementById('filtre-bas').value, document.getElementById('filtre-bit').value); };
     const bugun = new Date().toISOString().split('T')[0];
-    document.getElementById('filtre-bas').value = bugun;
-    document.getElementById('filtre-bit').value = bugun;
+    document.getElementById('filtre-bas').value = bugun; document.getElementById('filtre-bit').value = bugun;
     raporuGoster(bugun, bugun);
 
 </script>
