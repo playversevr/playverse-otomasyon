@@ -7,19 +7,16 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* GİRİŞ EKRANI TASARIMI */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         .login-box { background: #151515; padding: 40px; border-radius: 15px; border: 2px solid #2563eb; text-align: center; width: 300px; box-shadow: 0 0 30px rgba(37, 99, 235, 0.2); }
         .login-box input { margin: 10px 0; padding: 12px; font-size: 16px; }
         .login-box button { background: #2563eb; padding: 12px; font-size: 16px; margin-top: 15px; }
 
-        /* ANA UYGULAMA */
         #app-wrapper { display: none; width: 100%; height: 100%; }
         #sidebar { width: 360px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
         #main { flex: 1; padding: 25px; background: #0b0b0b; overflow-y: auto; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; }
         
-        /* KARTLAR */
         .card { background: #1c1c1c; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; position: relative; border-top: 4px solid #2563eb; transition: 0.3s; }
         .card.sure-doldu { border-top-color: #ff3e3e; box-shadow: 0 0 20px rgba(255, 62, 62, 0.2); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -40,7 +37,6 @@
         .btn-delete { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; }
         .btn-logout { background: #991b1b; width: auto; padding: 6px 12px; font-size: 12px; float: right; }
         
-        /* MÜKEMMEL MODAL (POPUP) EKRANLARI */
         #modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
         .modal-box { display:none; background:#1c1c1c; padding:30px; border-radius:16px; width:320px; text-align:center; box-shadow: 0 15px 40px rgba(0,0,0,0.6); animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -80,7 +76,7 @@
     
     <div id="modal-giris" class="modal-box" style="border-top: 4px solid #d97706;">
         <h3 style="color:#d97706;">⏱️ Giriş Saati</h3>
-        <p style="font-size:12px; color:#aaa; margin-top:-5px; margin-bottom:15px;">Müşterinin girdiği saati seçin.</p>
+        <p style="font-size:12px; color:#aaa; margin-top:-5px; margin-bottom:15px;">İleriye doğru sayım başlar.</p>
         <input type="time" id="input-giris-saat">
         <div class="modal-btn-group">
             <button class="btn" style="background:#444;" onclick="modalKapat()">İptal</button>
@@ -88,15 +84,28 @@
         </div>
     </div>
 
+    <div id="modal-fiyatlandir" class="modal-box" style="border-top: 4px solid #3b82f6;">
+        <h3 style="color:#3b82f6;">🛑 Açık Süreyi Kapat</h3>
+        <p style="font-size:14px; font-weight:bold; color:#fff; margin-top:-5px; margin-bottom:15px;" id="fiyatlandir-detay-text">Oynanan Süre: 0 Dk</p>
+        <div style="text-align:left;">
+            <label style="font-size:12px; color:#ccc;">Alınacak Ücret (₺)</label>
+            <input type="number" id="input-fiyatlandir-tutar" placeholder="Örn: 200">
+        </div>
+        <div class="modal-btn-group">
+            <button class="btn" style="background:#444;" onclick="modalKapat()">İptal</button>
+            <button class="btn" style="background:#3b82f6;" onclick="fiyatlandirmaKaydet()">Fiyatı Ekle</button>
+        </div>
+    </div>
+
     <div id="modal-ozel" class="modal-box" style="border-top: 4px solid #8e44ad;">
-        <h3 style="color:#8e44ad;">✏️ Özel Tarife</h3>
+        <h3 style="color:#8e44ad;">✏️ Manuel Tarife</h3>
         <div style="text-align:left; margin-bottom:10px;">
-            <label style="font-size:12px; color:#ccc;">Dakika</label>
-            <input type="number" id="input-ozel-dk" placeholder="Örn: 45">
+            <label style="font-size:12px; color:#ccc;">Eklenecek Dakika (İsteğe Bağlı)</label>
+            <input type="number" id="input-ozel-dk" placeholder="Boş bırakılabilir">
         </div>
         <div style="text-align:left;">
-            <label style="font-size:12px; color:#ccc;">Ücret (₺)</label>
-            <input type="number" id="input-ozel-fiyat" placeholder="Örn: 300">
+            <label style="font-size:12px; color:#ccc;">Ücret (₺) (İsteğe Bağlı)</label>
+            <input type="number" id="input-ozel-fiyat" placeholder="Örn: 100">
         </div>
         <div class="modal-btn-group">
             <button class="btn" style="background:#444;" onclick="modalKapat()">İptal</button>
@@ -106,13 +115,11 @@
 
     <div id="modal-odeme" class="modal-box" style="border-top: 4px solid #16a34a;">
         <h3 style="color:#16a34a;">💳 Ödeme Ekranı</h3>
-        <p style="font-size:13px; color:#aaa; margin-top:-5px; margin-bottom:10px;" id="odeme-detay-text">Masa / Ürün Detayı</p>
-        
+        <p style="font-size:13px; color:#aaa; margin-top:-5px; margin-bottom:10px;" id="odeme-detay-text">Masa Detayı</p>
         <div style="background: #111; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333;">
             <span style="font-size: 12px; color: #888;">Tahsil Edilecek Tutar</span><br>
             <span id="odeme-tutar-text" style="font-size: 36px; font-weight: bold; color: #fff;">0 ₺</span>
         </div>
-
         <div class="modal-btn-group">
             <button class="btn" style="background:#22c55e; flex: 1.2;" onclick="odemeTamamla('NAKİT')">💵 Nakit</button>
             <button class="btn" style="background:#3b82f6; flex: 1.2;" onclick="odemeTamamla('KART')">💳 Kart</button>
@@ -136,7 +143,7 @@
             </div>
         </div>
 
-        <h3>☕ Ürün / İçecek Ekle</h3>
+        <h3>☕ Ürün Ekle</h3>
         <select id="kantin-urun-tip">
             <option value="Çay">Çay</option><option value="Kahve">Kahve</option><option value="Su">Su (15₺)</option>
         </select>
@@ -183,9 +190,8 @@
     const auth = getAuth(app);
 
     let cihazVerileri = {};
-    let aktifModalIslem = {}; // Hangi modalın ve işlemin açık olduğunu tutar
+    let aktifModalIslem = {};
 
-    // GİRİŞ KONTROLÜ
     onAuthStateChanged(auth, (user) => {
         if (user) {
             document.getElementById('login-screen').style.display = 'none';
@@ -211,7 +217,7 @@
     window.modalKapat = function() {
         document.getElementById('modal-overlay').style.display = 'none';
         document.querySelectorAll('.modal-box').forEach(box => box.style.display = 'none');
-        aktifModalIslem = {}; // Sıfırla
+        aktifModalIslem = {}; 
     }
 
     window.modalAcGiris = function(id) {
@@ -222,6 +228,21 @@
         document.getElementById('input-giris-saat').value = simdi.toTimeString().slice(0,5);
     }
 
+    // YENİ: İLERİ SAYIMI FİYATLANDIRMA MODALI
+    window.modalAcFiyatlandir = function(id) {
+        let c = cihazVerileri[id];
+        let fark = new Date().getTime() - c.baslangic_ms;
+        let gecenDk = fark > 0 ? Math.floor(fark / 60000) : 0;
+
+        aktifModalIslem = { tur: 'FIYATLANDIR', masaId: id, gecenDk: gecenDk };
+        
+        document.getElementById('fiyatlandir-detay-text').innerText = `Oynanan Süre: ${gecenDk} Dakika`;
+        document.getElementById('input-fiyatlandir-tutar').value = '';
+        
+        document.getElementById('modal-overlay').style.display = 'flex';
+        document.getElementById('modal-fiyatlandir').style.display = 'block';
+    }
+
     window.modalAcOzel = function(id) {
         aktifModalIslem = { tur: 'OZEL', masaId: id };
         document.getElementById('modal-overlay').style.display = 'flex';
@@ -230,17 +251,15 @@
         document.getElementById('input-ozel-fiyat').value = '';
     }
 
-    // YENİ: Modern Ödeme Modalı Çağırıcısı
     function modalAcOdeme(tutar, detay, islemTuru, ekstraVeri = {}) {
         aktifModalIslem = { tur: islemTuru, ...ekstraVeri };
         document.getElementById('odeme-tutar-text').innerText = tutar + " ₺";
         document.getElementById('odeme-detay-text').innerText = detay;
-        
         document.getElementById('modal-overlay').style.display = 'flex';
         document.getElementById('modal-odeme').style.display = 'block';
     }
 
-    // GİRİŞ SAATİNİ KAYDET
+    // GİRİŞ SAATİNİ KAYDET (SADECE SAYACI BAŞLATIR, ÜCRET YAZMAZ)
     window.girisSaatiKaydet = function() {
         let saatGirdisi = document.getElementById('input-giris-saat').value; 
         if(!saatGirdisi) return;
@@ -253,29 +272,50 @@
         cihazVerileri[id].baslangic_ms = d.getTime();
         cihazVerileri[id].mod = 2; // İleri Sayım Modu
         cihazVerileri[id].odeme_alindi = false;
-        cihazVerileri[id].urunler.push({ ad: `Açık Süre (${saatGirdisi})`, fiyat: 0 });
         
         set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
         modalKapat();
     }
 
-    // ÖZEL SÜRE VE ÜCRET KAYDET
+    // YENİ: İLERİ SAYIMI BİTİR VE FİYATLANDIR
+    window.fiyatlandirmaKaydet = function() {
+        let fiyat = parseInt(document.getElementById('input-fiyatlandir-tutar').value);
+        if(isNaN(fiyat)) { alert("Lütfen bir ücret girin!"); return; }
+
+        let id = aktifModalIslem.masaId;
+        let gecenDk = aktifModalIslem.gecenDk;
+        
+        cihazVerileri[id].urunler.push({ ad: `Açık Süre (${gecenDk}dk)`, fiyat: fiyat });
+        cihazVerileri[id].toplam += fiyat;
+        cihazVerileri[id].mod = 0; // Sayacı durdur
+        
+        set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
+        modalKapat();
+    }
+
+    // GELİŞMİŞ ÖZEL SÜRE VE ÜCRET KAYDET (İkisi veya biri tek girilebilir)
     window.ozelSureKaydet = function() {
-        let dk = parseInt(document.getElementById('input-ozel-dk').value);
-        let fiyat = parseInt(document.getElementById('input-ozel-fiyat').value);
-        if(isNaN(dk) || isNaN(fiyat)) { alert("Lütfen sayı girin!"); return; }
+        let dk = parseInt(document.getElementById('input-ozel-dk').value) || 0;
+        let fiyat = parseInt(document.getElementById('input-ozel-fiyat').value) || 0;
+        if(dk === 0 && fiyat === 0) { alert("Lütfen dakika veya ücret girin!"); return; }
 
         let id = aktifModalIslem.masaId;
         let simdi = new Date().getTime();
-        let temel = (cihazVerileri[id].bitis_ms > simdi && cihazVerileri[id].mod === 1) ? cihazVerileri[id].bitis_ms : simdi;
         
         if(!cihazVerileri[id].urunler) cihazVerileri[id].urunler = [];
-        cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
-        cihazVerileri[id].mod = 1; // Geri Sayım Modu
+        
+        if (dk > 0) {
+            let temel = (cihazVerileri[id].bitis_ms > simdi && cihazVerileri[id].mod === 1) ? cihazVerileri[id].bitis_ms : simdi;
+            cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
+            cihazVerileri[id].mod = 1; // Geri Sayım Modu
+            cihazVerileri[id].urunler.push({ ad: `Özel ${dk}dk`, fiyat: fiyat });
+        } else if (fiyat > 0) {
+            // Sadece fiyat girildiyse sayacı elleme
+            cihazVerileri[id].urunler.push({ ad: `Manuel Ücret`, fiyat: fiyat });
+        }
+
         cihazVerileri[id].toplam += fiyat;
         cihazVerileri[id].odeme_alindi = false;
-        cihazVerileri[id].urunler.push({ ad: `Özel ${dk}dk`, fiyat: fiyat });
-        
         set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
         modalKapat();
     }
@@ -285,11 +325,7 @@
         if (!urunler || urunler.length === 0) return '<div style="color:#aaa; text-align:center;">İstasyon Boş</div>';
         let html = '<div class="urun-listesi">';
         urunler.forEach((u, index) => {
-            html += `
-                <div class="urun-item">
-                    <span>${u.ad} ${u.fiyat > 0 ? `(${u.fiyat}₺)` : ''}</span>
-                    <button class="btn-urun-sil" onclick="siparisSil(${masaId}, ${index}, ${u.fiyat}, '${u.ad}')">X</button>
-                </div>`;
+            html += `<div class="urun-item"><span>${u.ad} ${u.fiyat > 0 ? `(${u.fiyat}₺)` : ''}</span><button class="btn-urun-sil" onclick="siparisSil(${masaId}, ${index}, ${u.fiyat}, '${u.ad}')">X</button></div>`;
         });
         html += '</div>';
         return html;
@@ -297,8 +333,7 @@
 
     function urunleriOzetle(urunler) {
         if (!urunler || urunler.length === 0) return 'VR Gözlük Boş';
-        let sayac = {};
-        urunler.forEach(u => { sayac[u.ad] = (sayac[u.ad] || 0) + 1; });
+        let sayac = {}; urunler.forEach(u => { sayac[u.ad] = (sayac[u.ad] || 0) + 1; });
         let ozet = []; for (let ad in sayac) { ozet.push(`${sayac[ad]}x ${ad}`); }
         return ozet.join(", ");
     }
@@ -310,11 +345,14 @@
             if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, baslangic_ms: 0, mod: 0, urunler: [], toplam: 0, odeme_alindi: false };
             let aktifMi = cihazVerileri[i].mod > 0 || cihazVerileri[i].toplam > 0;
             let durum = "";
-            if (aktifMi) {
-                durum = cihazVerileri[i].odeme_alindi ? '<span class="status-badge paid">ÖDEME ALINDI ✅</span>' : '<span class="status-badge unpaid">ÖDEME BEKLENİYOR ⏳</span>';
-            }
+            if (aktifMi) { durum = cihazVerileri[i].odeme_alindi ? '<span class="status-badge paid">ÖDEME ALINDI ✅</span>' : '<span class="status-badge unpaid">ÖDEME BEKLENİYOR ⏳</span>'; }
 
             let siparisListesiHTML = siparisListesiOlustur(i, cihazVerileri[i].urunler);
+            
+            // DİNAMİK BUTON: İleri sayım (mod 2) varsa "Fiyatlandır", yoksa "Giriş Saati" görünür
+            let saatButonu = cihazVerileri[i].mod === 2 ? 
+                `<button class="btn" style="background:#3b82f6; flex:1; font-size:12px;" onclick="modalAcFiyatlandir(${i})">🛑 Fiyatlandır</button>` :
+                `<button class="btn" style="background:#d97706; flex:1; font-size:12px;" onclick="modalAcGiris(${i})">⏱️ Giriş Saati</button>`;
 
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
@@ -332,8 +370,8 @@
                     </div>
                     
                     <div style="display:flex; gap:5px; margin-top:5px;">
-                        <button class="btn" style="background:#8e44ad; flex:1; font-size:12px;" onclick="modalAcOzel(${i})">✏️ Özel Süre</button>
-                        <button class="btn" style="background:#d97706; flex:1; font-size:12px;" onclick="modalAcGiris(${i})">⏱️ Giriş Saati</button>
+                        <button class="btn" style="background:#8e44ad; flex:1; font-size:12px;" onclick="modalAcOzel(${i})">✏️ Özel Tarife</button>
+                        ${saatButonu}
                     </div>
 
                     <button class="btn btn-pay" onclick="masaOdemeHazirla(${i})">💰 ÖDEME AL (Açık Kalır)</button>
@@ -347,7 +385,7 @@
             cihazVerileri[masaId].urunler.splice(urunIndex, 1);
             cihazVerileri[masaId].toplam -= urunFiyati;
             cihazVerileri[masaId].odeme_alindi = false;
-            if(cihazVerileri[masaId].urunler.length === 0) cihazVerileri[masaId].mod = 0;
+            if(cihazVerileri[masaId].urunler.length === 0 && cihazVerileri[masaId].mod !== 2) cihazVerileri[masaId].mod = 0;
             set(ref(db, 'aktif_masalar/' + masaId), cihazVerileri[masaId]);
         }
     }
@@ -372,7 +410,6 @@
         let fiyat = uTip === "Çay" ? parseInt(document.getElementById('f-cay').value) : (uTip === "Kahve" ? parseInt(document.getElementById('f-kahve').value) : 15);
         
         if(h === "MISAFIR") {
-            // YENİ UI: Dış satış için pop-up tetikle
             modalAcOdeme(fiyat, `Dış Satış: ${uTip}`, 'DIS_SATIS', { urunAd: uTip, urunFiyat: fiyat });
         } else {
             if(!cihazVerileri[h].urunler) cihazVerileri[h].urunler = [];
@@ -385,18 +422,21 @@
 
     window.masaOdemeHazirla = function(id) {
         let c = cihazVerileri[id];
+        
+        if (c.mod === 2) {
+            alert("Lütfen ödeme almadan önce açık süreyi sonlandırıp (🛑 Fiyatlandır butonu) ücretini belirleyin!");
+            return;
+        }
+        
         if(c.toplam === 0 || c.odeme_alindi) return;
         
-        // YENİ UI: Masa ödemesi için pop-up tetikle
         let grupluUrunler = urunleriOzetle(c.urunler);
         modalAcOdeme(c.toplam, `VR Gözlük #${id} (${grupluUrunler})`, 'MASA_ODEME', { masaId: id });
     }
 
-    // YENİ: MODAL'DAN TETİKLENEN ANA ÖDEME FONKSİYONU
     window.odemeTamamla = function(yontem) {
         if(aktifModalIslem.tur === 'DIS_SATIS') {
             raporKaydet("Dış Satış", aktifModalIslem.urunFiyat, yontem, `1x ${aktifModalIslem.urunAd}`);
-            alert(`Dış Satış Tamamlandı: ${aktifModalIslem.urunAd} (${yontem})`);
             modalKapat();
         } 
         else if(aktifModalIslem.tur === 'MASA_ODEME') {
@@ -408,10 +448,6 @@
                 let fark = c.bitis_ms - new Date().getTime();
                 let kalanDk = fark > 0 ? Math.floor(fark / 60000) : 0;
                 detayEk = `⏳ Kalan Süre: ${kalanDk} Dakika`;
-            } else if (c.mod === 2) {
-                let fark = new Date().getTime() - c.baslangic_ms;
-                let gecenDk = fark > 0 ? Math.floor(fark / 60000) : 0;
-                detayEk = `📈 Oynanan Süre: ${gecenDk} Dakika`;
             }
             
             let grupluUrunler = urunleriOzetle(c.urunler);
@@ -442,7 +478,6 @@
 
     window.raporSil = (key) => { if(confirm("Silinsin mi?")) remove(ref(db, 'raporlar/' + key)); }
 
-    // SAYAÇ DÖNGÜSÜ (İLERİ VE GERİ SAYIM)
     setInterval(() => {
         for(let i=1; i<=6; i++) {
             const tEl = document.getElementById(`time-${i}`);
