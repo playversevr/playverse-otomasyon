@@ -3,48 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>vr-kafe-panel | Tam Sürüm</title>
+    <title>VR Pro v11 - Kesintisiz Takip</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        #sidebar { width: 340px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
+        #sidebar { width: 350px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
         #main { flex: 1; padding: 25px; background: #0b0b0b; overflow-y: auto; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: #1c1c1c; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; position: relative; border-top: 4px solid #2563eb; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        
+        .card { background: #1c1c1c; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; position: relative; border-top: 4px solid #2563eb; transition: 0.3s; }
         .card.sure-doldu { border-top-color: #ff3e3e; box-shadow: 0 0 20px rgba(255, 62, 62, 0.2); }
+        
+        /* ÖDEME DURUM ETİKETLERİ */
+        .status-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .unpaid { background: #d97706; color: white; } /* Bekleniyor */
+        
         .timer { font-size: 42px; font-weight: bold; color: #00fbff; margin: 10px 0; font-family: 'Courier New', monospace; }
-        .btn { cursor: pointer; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 5px; color: white; }
+        
+        .btn { cursor: pointer; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 5px; color: white; transition: 0.2s; }
         .btn-vr { background: #2563eb; }
-        .btn-pay { background: #16a34a; margin-top: 15px; border: 1px solid #22c55e; box-shadow: 0 4px 0 #15803d; }
-        .btn-pay:active { transform: translateY(4px); box-shadow: none; }
-        .btn-delete { background: #991b1b; font-size: 11px; width: auto; padding: 4px 8px; border-radius: 4px; }
-        input, select { background: #252525; color: white; border: 1px solid #444; padding: 10px; width: 100%; margin: 5px 0; border-radius: 6px; }
-        .rapor-item { background: #222; padding: 8px; border-radius: 5px; margin-bottom: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #16a34a; }
+        .btn-pay { background: #16a34a; font-size: 16px; margin-top:10px; border-bottom: 3px solid #15803d; }
+        .btn-pay:active { transform: translateY(2px); border-bottom: none; }
+        .btn-delete { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; }
+        
+        .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; border: 1px solid #333; font-size: 13px; }
+        .accordion-content { display:none; background:#111; padding:10px; font-size:11px; border: 1px solid #333; border-top: none; color: #aaa; }
+        .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; border: 1px solid #1e3a8a; margin-bottom: 15px; text-align: center; }
+        
+        input, select { background: #252525; color: white; border: 1px solid #444; padding: 10px; width: 100%; margin: 5px 0; border-radius: 6px; box-sizing: border-box; }
         h3 { border-bottom: 1px solid #333; padding-bottom: 8px; color: #00fbff; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2 style="color: #00fbff; margin-top:0;">🎮 VR KAFE PANEL</h2>
+    <h2 style="color: #00fbff; margin-top:0;">🎮 vr-kafe-panel</h2>
     
-    <h3>💰 Fiyat Ayarları</h3>
-    <label style="font-size:12px;">30 Dk (₺)</label>
-    <input type="number" id="f-30" value="250">
-    <label style="font-size:12px;">60 Dk (₺)</label>
-    <input type="number" id="f-60" value="450">
-    
-    <h3>☕ Kantin & Hızlı Satış</h3>
+    <div style="background: #1e3a8a33; padding: 12px; border-radius: 10px;">
+        <h4 style="margin:0 0 10px 0;">💰 Fiyatlar</h4>
+        <input type="number" id="f-30" value="250">
+        <input type="number" id="f-60" value="450">
+    </div>
+
+    <h3>☕ Kantin & Ürün</h3>
+    <select id="kantin-urun-tip">
+        <option value="Çay">Çay</option><option value="Kahve">Kahve</option><option value="Su">Su</option>
+    </select>
     <select id="hedef-masa">
         <option value="1">Masa 1</option><option value="2">Masa 2</option>
         <option value="3">Masa 3</option><option value="4">Masa 4</option>
         <option value="5">Masa 5</option><option value="6">Masa 6</option>
-        <option value="MISAFIR">👤 Ayaküstü Misafir</option>
+        <option value="MISAFIR">👤 Dış Satış</option>
     </select>
     <button class="btn" style="background:#d97706" id="btn-urun-ekle">➕ Ürün Ekle (20₺)</button>
     
-    <h3>📊 Bugünün Raporu</h3>
+    <h3>📊 Günlük Rapor</h3>
+    <div id="rapor-ozet-alan"></div>
     <div id="rapor-listesi"></div>
-    <div id="gunluk-toplam" style="margin-top:15px; font-size: 18px; font-weight:bold; color:#22c55e; border-top: 1px solid #333; padding-top: 10px;">Ciro: 0₺</div>
 </div>
 
 <div id="main">
@@ -73,15 +87,24 @@
         const grid = document.getElementById('cihazlar');
         grid.innerHTML = ''; 
         for(let i=1; i<=6; i++) {
-            if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, toplam: 0 };
+            if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, urunler: [], toplam: 0 };
+            let aktifMi = cihazVerileri[i].toplam > 0;
+            
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
+                    ${aktifMi ? '<span class="status-badge unpaid">ÖDEME BEKLENİYOR</span>' : ''}
                     <h2 style="margin:0;">İstasyon #${i}</h2>
                     <div class="timer" id="time-${i}">00:00</div>
-                    <div style="font-size:16px; margin-bottom:10px; color:#aaa;">Borç: <b style="color:#fff;">${cihazVerileri[i].toplam}₺</b></div>
+                    <div style="margin-bottom:10px;">
+                        Borç: <b style="font-size:18px;">${cihazVerileri[i].toplam}₺</b>
+                        <div style="font-size:11px; opacity:0.5; margin-top:5px;">
+                            ${cihazVerileri[i].urunler.map(u => u.ad).join(", ") || 'İstasyon Boş'}
+                        </div>
+                    </div>
                     <button class="btn btn-vr" onclick="vrEkle(${i},30)">+30 Dakika</button>
                     <button class="btn btn-vr" onclick="vrEkle(${i},60)">+60 Dakika</button>
                     <button class="btn btn-pay" onclick="odemeAl(${i})">💰 ÖDEME AL & KAPAT</button>
+                    <button class="btn" style="background:#333; font-size:11px;" onclick="iptalEt(${i})">İptal / Sıfırla</button>
                 </div>`;
         }
     }
@@ -90,47 +113,105 @@
         let fiyat = dk === 30 ? parseInt(document.getElementById('f-30').value) : parseInt(document.getElementById('f-60').value);
         let simdi = new Date().getTime();
         let temel = (cihazVerileri[id].bitis_ms > simdi) ? cihazVerileri[id].bitis_ms : simdi;
+        
         cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
+        cihazVerileri[id].urunler.push({ ad: `${dk}dk VR`, fiyat: fiyat });
         cihazVerileri[id].toplam += fiyat;
-        firebaseGuncelle(id);
+        
+        set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
     }
 
     document.getElementById('btn-urun-ekle').onclick = function() {
-        let id = document.getElementById('hedef-masa').value;
-        if(id === "MISAFIR") {
-            raporEkle("Dış Satış", 20);
+        let h = document.getElementById('hedef-masa').value;
+        let uTip = document.getElementById('kantin-urun-tip').value;
+        if(h === "MISAFIR") {
+            raporKaydet("Dış Satış: " + uTip, 20);
         } else {
-            cihazVerileri[id].toplam += 20;
-            firebaseGuncelle(id);
+            cihazVerileri[h].urunler.push({ ad: uTip, fiyat: 20 });
+            cihazVerileri[h].toplam += 20;
+            set(ref(db, 'aktif_masalar/' + h), cihazVerileri[h]);
         }
     };
 
-    function firebaseGuncelle(id) {
-        set(ref(db, 'aktif_masalar/' + id), {
-            bitis_ms: cihazVerileri[id].bitis_ms,
-            toplam: cihazVerileri[id].toplam
-        });
-    }
-
-    // --- ÖDEME ALMA VE RAPORA İŞLEME ---
     window.odemeAl = function(id) {
-        let tutar = cihazVerileri[id].toplam;
-        if(tutar <= 0) {
-            if(confirm("Masa borcu yok. Yine de sıfırlamak istiyor musunuz?")) {
-                remove(ref(db, 'aktif_masalar/' + id));
-            }
-            return;
-        }
-        
-        if(confirm(`Masa #${id} için ${tutar}₺ ödeme alındı mı? \n\nOnaylarsanız raporlara eklenecek ve masa sıfırlanacaktır.`)) {
-            raporEkle(`Masa #${id} Ödemesi`, tutar);
+        let c = cihazVerileri[id];
+        if(c.toplam === 0) return;
+        if(confirm(`${c.toplam}₺ ödeme alındı mı? \nKapatılan masa rapora işlenir.`)) {
+            let detay = c.urunler.map(u => u.ad).join(", ");
+            raporKaydet(`Masa #${id} (${detay})`, c.toplam);
             remove(ref(db, 'aktif_masalar/' + id));
         }
     }
 
-    function raporEkle(isim, tutar) {
-        const yeniRaporRef = push(ref(db, 'raporlar'));
-        set(yeniRaporRef, {
-            isim: isim,
-            tutar: tutar,
-            saat: new Date().toLocale
+    window.iptalEt = function(id) {
+        if(confirm("DİKKAT: Masa rapora işlenmeden sıfırlanacak! Devam edilsin mi?")) {
+            remove(ref(db, 'aktif_masalar/' + id));
+        }
+    }
+
+    function raporKaydet(isim, tutar) {
+        const yeniRapor = push(ref(db, 'raporlar'));
+        set(yeniRapor, {
+            isim: isim, tutar: tutar,
+            saat: new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'}),
+            tarih: new Date().toISOString().split('T')[0]
+        });
+    }
+
+    window.raporSil = (key) => {
+        if(confirm("Bu işlem kaydı silinsin mi?")) remove(ref(db, 'raporlar/' + key));
+    }
+
+    setInterval(() => {
+        for(let i=1; i<=6; i++) {
+            const tEl = document.getElementById(`time-${i}`);
+            if(!tEl || !cihazVerileri[i] || cihazVerileri[i].bitis_ms === 0) {
+                if(tEl) tEl.innerText = "00:00";
+                continue;
+            }
+            let saniye = Math.floor((cihazVerileri[i].bitis_ms - new Date().getTime()) / 1000);
+            let mutlak = Math.abs(saniye);
+            let dak = Math.floor(mutlak / 60);
+            let san = mutlak % 60;
+            tEl.innerText = (saniye < 0 ? "-" : "") + `${dak}:${san < 10 ? '0'+san : san}`;
+            if(saniye < 0) document.getElementById(`card-${i}`).classList.add('sure-doldu');
+            else document.getElementById(`card-${i}`).classList.remove('sure-doldu');
+        }
+    }, 1000);
+
+    onValue(ref(db, 'aktif_masalar'), (snapshot) => {
+        const data = snapshot.val();
+        for(let i=1; i<=6; i++) {
+            cihazVerileri[i] = (data && data[i]) ? data[i] : { bitis_ms: 0, urunler: [], toplam: 0 };
+        }
+        cihazlariOlustur();
+    });
+
+    onValue(ref(db, 'raporlar'), (snapshot) => {
+        const data = snapshot.val();
+        const liste = document.getElementById('rapor-listesi');
+        const ozet = document.getElementById('rapor-ozet-alan');
+        liste.innerHTML = ''; let toplam = 0;
+        let bugun = new Date().toISOString().split('T')[0];
+
+        if(data) {
+            Object.keys(data).reverse().forEach(key => {
+                let r = data[key];
+                if(r.tarih === bugun) {
+                    toplam += r.tutar;
+                    liste.innerHTML += `
+                        <div>
+                            <div class="accordion-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                                <span>${r.saat} | ${r.isim.substring(0,18)}...</span>
+                                <span>${r.tutar}₺ <button class="btn-delete" onclick="event.stopPropagation(); raporSil('${key}')">X</button></span>
+                            </div>
+                            <div class="accordion-content">Detay: ${r.isim}</div>
+                        </div>`;
+                }
+            });
+        }
+        ozet.innerHTML = `<div class="rapor-ozet-box">Bugün Toplam Ciro<br><b style="font-size:24px; color:#22c55e;">${toplam}₺</b></div>`;
+    });
+</script>
+</body>
+</html>
