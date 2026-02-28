@@ -3,19 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VR Pro v16 - Detaylı Raporlama</title>
+    <title>VR Pro v17 - Güvenli Giriş</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* GİRİŞ EKRANI TASARIMI */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        .login-box { background: #151515; padding: 40px; border-radius: 15px; border: 2px solid #2563eb; text-align: center; width: 300px; box-shadow: 0 0 30px rgba(37, 99, 235, 0.2); }
+        .login-box input { margin: 10px 0; padding: 12px; font-size: 16px; }
+        .login-box button { background: #2563eb; padding: 12px; font-size: 16px; margin-top: 15px; }
+
+        /* ANA UYGULAMA (GİZLİ BAŞLAR) */
+        #app-wrapper { display: none; width: 100%; height: 100%; }
         #sidebar { width: 360px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
         #main { flex: 1; padding: 25px; background: #0b0b0b; overflow-y: auto; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
         
-        /* Kart Tasarımı */
         .card { background: #1c1c1c; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; position: relative; border-top: 4px solid #2563eb; transition: 0.3s; }
         .card.sure-doldu { border-top-color: #ff3e3e; box-shadow: 0 0 20px rgba(255, 62, 62, 0.2); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         
-        /* DURUM ETİKETLERİ */
         .status-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         .unpaid { background: #d97706; color: white; } 
         .paid { background: #16a34a; color: white; }
@@ -26,6 +33,7 @@
         .btn-pay { background: #16a34a; font-size: 14px; margin-top:10px; border-bottom: 3px solid #116631; }
         .btn-close { background: #4b5563; font-size: 14px; margin-top:5px; border-bottom: 3px solid #374151; }
         .btn-delete { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; }
+        .btn-logout { background: #991b1b; width: auto; padding: 6px 12px; font-size: 12px; float: right; }
         
         .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; border: 1px solid #333; font-size: 12px; }
         .accordion-content { display:none; background:#111; padding:10px; font-size:12px; border: 1px solid #333; border-top: none; color: #00fbff; line-height: 1.5; }
@@ -37,48 +45,64 @@
 </head>
 <body>
 
-<div id="sidebar">
-    <h2 style="color: #00fbff; margin-top:0;">🎮 vr-kafe-panel</h2>
-    
-    <div style="background: #1e3a8a33; padding: 12px; border-radius: 10px;">
-        <h4 style="margin:0 0 5px 0;">💰 Fiyat Ayarları (₺)</h4>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <div><label style="font-size:10px;">VR 30</label><input type="number" id="f-30" value="250"></div>
-            <div><label style="font-size:10px;">VR 60</label><input type="number" id="f-60" value="450"></div>
-            <div><label style="font-size:10px;">Çay</label><input type="number" id="f-cay" value="20"></div>
-            <div><label style="font-size:10px;">Kahve</label><input type="number" id="f-kahve" value="40"></div>
-        </div>
+<div id="login-screen">
+    <div class="login-box">
+        <h2 style="color: #00fbff; margin-top: 0;">🎮 VR KAFE YÖNETİM</h2>
+        <p style="font-size: 12px; color: #aaa; margin-bottom: 20px;">Sisteme erişmek için giriş yapın.</p>
+        <input type="email" id="login-email" placeholder="E-Posta">
+        <input type="password" id="login-pass" placeholder="Şifre">
+        <button class="btn" id="btn-login">Giriş Yap</button>
+        <div id="login-error" style="color: #ff3e3e; font-size: 12px; margin-top: 10px; display: none;">Hatalı e-posta veya şifre!</div>
     </div>
-
-    <h3>☕ Ürün Ekle</h3>
-    <select id="kantin-urun-tip">
-        <option value="Çay">Çay</option><option value="Kahve">Kahve</option><option value="Su">Su (15₺)</option>
-    </select>
-    <select id="hedef-masa">
-        <option value="1">VR Gözlük 1</option><option value="2">VR Gözlük 2</option><option value="3">VR Gözlük 3</option>
-        <option value="4">VR Gözlük 4</option><option value="5">VR Gözlük 5</option><option value="6">VR Gözlük 6</option>
-        <option value="MISAFIR">👤 Dış Satış</option>
-    </select>
-    <button class="btn" style="background:#d97706" id="btn-urun-ekle">➕ Ekle</button>
-    
-    <h3>📅 Rapor Filtrele</h3>
-    <div style="display:flex; gap:5px;">
-        <input type="date" id="filtre-bas">
-        <input type="date" id="filtre-bit">
-    </div>
-    <button class="btn" style="background:#444" id="btn-filtrele">Raporu Güncelle</button>
-
-    <div id="rapor-ozet-alan"></div>
-    <div id="rapor-listesi"></div>
 </div>
 
-<div id="main">
-    <div class="grid" id="cihazlar"></div>
+<div id="app-wrapper">
+    <div id="sidebar">
+        <button class="btn btn-logout" id="btn-logout">Çıkış Yap 🔒</button>
+        <h2 style="color: #00fbff; margin-top:0;">🎮 VR Pro</h2>
+        
+        <div style="background: #1e3a8a33; padding: 12px; border-radius: 10px; clear: both;">
+            <h4 style="margin:0 0 5px 0;">💰 Fiyat Ayarları (₺)</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                <div><label style="font-size:10px;">VR 30</label><input type="number" id="f-30" value="250"></div>
+                <div><label style="font-size:10px;">VR 60</label><input type="number" id="f-60" value="450"></div>
+                <div><label style="font-size:10px;">Çay</label><input type="number" id="f-cay" value="20"></div>
+                <div><label style="font-size:10px;">Kahve</label><input type="number" id="f-kahve" value="40"></div>
+            </div>
+        </div>
+
+        <h3>☕ Ürün Ekle</h3>
+        <select id="kantin-urun-tip">
+            <option value="Çay">Çay</option><option value="Kahve">Kahve</option><option value="Su">Su (15₺)</option>
+        </select>
+        <select id="hedef-masa">
+            <option value="1">VR Gözlük 1</option><option value="2">VR Gözlük 2</option><option value="3">VR Gözlük 3</option>
+            <option value="4">VR Gözlük 4</option><option value="5">VR Gözlük 5</option><option value="6">VR Gözlük 6</option>
+            <option value="MISAFIR">👤 Dış Satış</option>
+        </select>
+        <button class="btn" style="background:#d97706" id="btn-urun-ekle">➕ Ekle</button>
+        
+        <h3>📅 Rapor Filtrele</h3>
+        <div style="display:flex; gap:5px;">
+            <input type="date" id="filtre-bas">
+            <input type="date" id="filtre-bit">
+        </div>
+        <button class="btn" style="background:#444" id="btn-filtrele">Raporu Güncelle</button>
+
+        <div id="rapor-ozet-alan"></div>
+        <div id="rapor-listesi"></div>
+    </div>
+
+    <div id="main">
+        <div class="grid" id="cihazlar"></div>
+    </div>
 </div>
 
 <script type="module">
+    // Firebase Auth Modülleri Eklendi
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCGk6ca-X8wCbLB7xOu5imiH6g23ZmazyQ",
@@ -92,19 +116,48 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const auth = getAuth(app); // Giriş yöneticisi
+
     let cihazVerileri = {};
 
-    // Ürünleri gruplayıp (Örn: 3x Çay, 1x 30dk VR) metin olarak döndüren fonksiyon
+    // GİRİŞ KONTROL SİSTEMİ
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // Kullanıcı giriş yaptıysa paneli göster
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-wrapper').style.display = 'flex';
+            sistemiBaslat(); // Verileri çekmeye başla
+        } else {
+            // Çıkış yapıldıysa giriş ekranını göster
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('app-wrapper').style.display = 'none';
+        }
+    });
+
+    // Giriş Yap Butonu
+    document.getElementById('btn-login').onclick = () => {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-pass').value;
+        signInWithEmailAndPassword(auth, email, pass).catch((error) => {
+            document.getElementById('login-error').style.display = 'block';
+        });
+    };
+
+    // Çıkış Yap Butonu
+    document.getElementById('btn-logout').onclick = () => {
+        if(confirm("Sistemden çıkış yapılacak. Emin misiniz?")) {
+            signOut(auth);
+        }
+    };
+
+    // --- BURADAN SONRASI PANEL FONKSİYONLARIDIR (Eski kodlar tamamen korundu) ---
+
     function urunleriOzetle(urunler) {
         if (!urunler || urunler.length === 0) return 'VR Gözlük Boş';
         let sayac = {};
-        urunler.forEach(u => {
-            sayac[u.ad] = (sayac[u.ad] || 0) + 1;
-        });
+        urunler.forEach(u => { sayac[u.ad] = (sayac[u.ad] || 0) + 1; });
         let ozet = [];
-        for (let ad in sayac) {
-            ozet.push(`${sayac[ad]}x ${ad}`);
-        }
+        for (let ad in sayac) { ozet.push(`${sayac[ad]}x ${ad}`); }
         return ozet.join(", ");
     }
 
@@ -160,7 +213,6 @@
         
         if(h === "MISAFIR") {
             let yontem = confirm("Dış Satış Ödemesi:\nNakit için TAMAM, Kart için İPTAL seçin.") ? "NAKİT" : "KART";
-            // Düzeltme: tutar yerine fiyat değişkeni kullanıldı
             raporKaydet("Dış Satış", fiyat, yontem, `1x ${uTip}`);
             alert(`Dış Satış Raporlara Eklendi: ${uTip} (${fiyat}₺)`);
         } else {
@@ -180,9 +232,7 @@
         
         let kalanDk = 0;
         let fark = c.bitis_ms - new Date().getTime();
-        if (fark > 0) {
-            kalanDk = Math.floor(fark / 60000);
-        }
+        if (fark > 0) { kalanDk = Math.floor(fark / 60000); }
         
         let grupluUrunler = urunleriOzetle(c.urunler);
         let detayMetni = `${grupluUrunler} <br> ⏳ <b>Kalan Süre: ${kalanDk} Dakika</b>`;
@@ -202,10 +252,7 @@
 
     function raporKaydet(isim, tutar, yontem, detay) {
         push(ref(db, 'raporlar'), {
-            isim: isim, 
-            tutar: tutar, 
-            yontem: yontem,
-            detay: detay || "Detay yok",
+            isim: isim, tutar: tutar, yontem: yontem, detay: detay || "Detay yok",
             saat: new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'}),
             tarih: new Date().toISOString().split('T')[0]
         });
@@ -219,7 +266,6 @@
             if(!tEl || !cihazVerileri[i] || cihazVerileri[i].bitis_ms === 0) { if(tEl) tEl.innerText = "00:00"; continue; }
             
             let fark = cihazVerileri[i].bitis_ms - new Date().getTime();
-            
             if (fark <= 0) {
                 tEl.innerText = "SÜRE DOLDU!";
                 document.getElementById(`card-${i}`).classList.add('sure-doldu');
@@ -232,11 +278,19 @@
         }
     }, 1000);
 
-    onValue(ref(db, 'aktif_masalar'), (snapshot) => {
-        const data = snapshot.val();
-        for(let i=1; i<=6; i++) { cihazVerileri[i] = (data && data[i]) ? data[i] : { bitis_ms: 0, urunler: [], toplam: 0, odeme_alindi: false }; }
-        cihazlariOlustur();
-    });
+    // SADECE GİRİŞ YAPINCA VERİLERİ ÇEK
+    function sistemiBaslat() {
+        onValue(ref(db, 'aktif_masalar'), (snapshot) => {
+            const data = snapshot.val();
+            for(let i=1; i<=6; i++) { cihazVerileri[i] = (data && data[i]) ? data[i] : { bitis_ms: 0, urunler: [], toplam: 0, odeme_alindi: false }; }
+            cihazlariOlustur();
+        });
+
+        const bugun = new Date().toISOString().split('T')[0];
+        document.getElementById('filtre-bas').value = bugun; 
+        document.getElementById('filtre-bit').value = bugun;
+        raporuGoster(bugun, bugun);
+    }
 
     function raporuGoster(baslangic, bitis) {
         onValue(ref(db, 'raporlar'), (snapshot) => {
@@ -265,9 +319,6 @@
     }
 
     document.getElementById('btn-filtrele').onclick = () => { raporuGoster(document.getElementById('filtre-bas').value, document.getElementById('filtre-bit').value); };
-    const bugun = new Date().toISOString().split('T')[0];
-    document.getElementById('filtre-bas').value = bugun; document.getElementById('filtre-bit').value = bugun;
-    raporuGoster(bugun, bugun);
 
 </script>
 </body>
