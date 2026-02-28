@@ -1,3 +1,16 @@
+Çok mantıklı bir yaklaşım. Hem ekranda fazladan bir buton ve fazladan bir pop-up kalabalığı yaratmamış oluruz, hem de "Özel Tarife" butonunun esnekliğini tam potansiyeliyle kullanmış oluruz.
+
+Dediğin gibi **"Fiyatlandır"** butonunu ve ona ait uyarıları tamamen kaldırdım. Artık "Giriş Saati" ile başlattığın ileri sayımlı bir masadan ödeme almak istediğinde:
+
+1. **✏️ Özel Tarife** butonuna basıp sadece ücreti (örn: 200) yazıp ekliyorsun.
+2. Ardından **💰 ÖDEME AL** butonuna basıyorsun.
+3. Sistem o anki oynanan süreyi otomatik hesaplayıp rapora işliyor.
+
+İşte bu kadar basit! Arayüzü daha da sadeleştiren **VR Pro v22** kodun:
+
+### 🎮 VR Pro v22 - Sadeleştirilmiş İleri Sayım & Fiyatlandırma
+
+```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -84,24 +97,11 @@
         </div>
     </div>
 
-    <div id="modal-fiyatlandir" class="modal-box" style="border-top: 4px solid #3b82f6;">
-        <h3 style="color:#3b82f6;">🛑 Açık Süreyi Kapat</h3>
-        <p style="font-size:14px; font-weight:bold; color:#fff; margin-top:-5px; margin-bottom:15px;" id="fiyatlandir-detay-text">Oynanan Süre: 0 Dk</p>
-        <div style="text-align:left;">
-            <label style="font-size:12px; color:#ccc;">Alınacak Ücret (₺)</label>
-            <input type="number" id="input-fiyatlandir-tutar" placeholder="Örn: 200">
-        </div>
-        <div class="modal-btn-group">
-            <button class="btn" style="background:#444;" onclick="modalKapat()">İptal</button>
-            <button class="btn" style="background:#3b82f6;" onclick="fiyatlandirmaKaydet()">Fiyatı Ekle</button>
-        </div>
-    </div>
-
     <div id="modal-ozel" class="modal-box" style="border-top: 4px solid #8e44ad;">
-        <h3 style="color:#8e44ad;">✏️ Manuel Tarife</h3>
+        <h3 style="color:#8e44ad;">✏️ Özel Tarife</h3>
         <div style="text-align:left; margin-bottom:10px;">
             <label style="font-size:12px; color:#ccc;">Eklenecek Dakika (İsteğe Bağlı)</label>
-            <input type="number" id="input-ozel-dk" placeholder="Boş bırakılabilir">
+            <input type="number" id="input-ozel-dk" placeholder="Örn: 45">
         </div>
         <div style="text-align:left;">
             <label style="font-size:12px; color:#ccc;">Ücret (₺) (İsteğe Bağlı)</label>
@@ -228,21 +228,6 @@
         document.getElementById('input-giris-saat').value = simdi.toTimeString().slice(0,5);
     }
 
-    // YENİ: İLERİ SAYIMI FİYATLANDIRMA MODALI
-    window.modalAcFiyatlandir = function(id) {
-        let c = cihazVerileri[id];
-        let fark = new Date().getTime() - c.baslangic_ms;
-        let gecenDk = fark > 0 ? Math.floor(fark / 60000) : 0;
-
-        aktifModalIslem = { tur: 'FIYATLANDIR', masaId: id, gecenDk: gecenDk };
-        
-        document.getElementById('fiyatlandir-detay-text').innerText = `Oynanan Süre: ${gecenDk} Dakika`;
-        document.getElementById('input-fiyatlandir-tutar').value = '';
-        
-        document.getElementById('modal-overlay').style.display = 'flex';
-        document.getElementById('modal-fiyatlandir').style.display = 'block';
-    }
-
     window.modalAcOzel = function(id) {
         aktifModalIslem = { tur: 'OZEL', masaId: id };
         document.getElementById('modal-overlay').style.display = 'flex';
@@ -259,7 +244,7 @@
         document.getElementById('modal-odeme').style.display = 'block';
     }
 
-    // GİRİŞ SAATİNİ KAYDET (SADECE SAYACI BAŞLATIR, ÜCRET YAZMAZ)
+    // GİRİŞ SAATİNİ KAYDET
     window.girisSaatiKaydet = function() {
         let saatGirdisi = document.getElementById('input-giris-saat').value; 
         if(!saatGirdisi) return;
@@ -270,30 +255,16 @@
         let id = aktifModalIslem.masaId;
         if(!cihazVerileri[id].urunler) cihazVerileri[id].urunler = [];
         cihazVerileri[id].baslangic_ms = d.getTime();
-        cihazVerileri[id].mod = 2; // İleri Sayım Modu
+        cihazVerileri[id].mod = 2; 
         cihazVerileri[id].odeme_alindi = false;
         
-        set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
-        modalKapat();
-    }
-
-    // YENİ: İLERİ SAYIMI BİTİR VE FİYATLANDIR
-    window.fiyatlandirmaKaydet = function() {
-        let fiyat = parseInt(document.getElementById('input-fiyatlandir-tutar').value);
-        if(isNaN(fiyat)) { alert("Lütfen bir ücret girin!"); return; }
-
-        let id = aktifModalIslem.masaId;
-        let gecenDk = aktifModalIslem.gecenDk;
-        
-        cihazVerileri[id].urunler.push({ ad: `Açık Süre (${gecenDk}dk)`, fiyat: fiyat });
-        cihazVerileri[id].toplam += fiyat;
-        cihazVerileri[id].mod = 0; // Sayacı durdur
+        cihazVerileri[id].urunler.push({ ad: `Açık Süre (${saatGirdisi})`, fiyat: 0 });
         
         set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
         modalKapat();
     }
 
-    // GELİŞMİŞ ÖZEL SÜRE VE ÜCRET KAYDET (İkisi veya biri tek girilebilir)
+    // ÖZEL SÜRE VE ÜCRET KAYDET
     window.ozelSureKaydet = function() {
         let dk = parseInt(document.getElementById('input-ozel-dk').value) || 0;
         let fiyat = parseInt(document.getElementById('input-ozel-fiyat').value) || 0;
@@ -307,10 +278,9 @@
         if (dk > 0) {
             let temel = (cihazVerileri[id].bitis_ms > simdi && cihazVerileri[id].mod === 1) ? cihazVerileri[id].bitis_ms : simdi;
             cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
-            cihazVerileri[id].mod = 1; // Geri Sayım Modu
+            cihazVerileri[id].mod = 1; 
             cihazVerileri[id].urunler.push({ ad: `Özel ${dk}dk`, fiyat: fiyat });
         } else if (fiyat > 0) {
-            // Sadece fiyat girildiyse sayacı elleme
             cihazVerileri[id].urunler.push({ ad: `Manuel Ücret`, fiyat: fiyat });
         }
 
@@ -349,11 +319,6 @@
 
             let siparisListesiHTML = siparisListesiOlustur(i, cihazVerileri[i].urunler);
             
-            // DİNAMİK BUTON: İleri sayım (mod 2) varsa "Fiyatlandır", yoksa "Giriş Saati" görünür
-            let saatButonu = cihazVerileri[i].mod === 2 ? 
-                `<button class="btn" style="background:#3b82f6; flex:1; font-size:12px;" onclick="modalAcFiyatlandir(${i})">🛑 Fiyatlandır</button>` :
-                `<button class="btn" style="background:#d97706; flex:1; font-size:12px;" onclick="modalAcGiris(${i})">⏱️ Giriş Saati</button>`;
-
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
                     ${durum}
@@ -371,7 +336,7 @@
                     
                     <div style="display:flex; gap:5px; margin-top:5px;">
                         <button class="btn" style="background:#8e44ad; flex:1; font-size:12px;" onclick="modalAcOzel(${i})">✏️ Özel Tarife</button>
-                        ${saatButonu}
+                        <button class="btn" style="background:#d97706; flex:1; font-size:12px;" onclick="modalAcGiris(${i})">⏱️ Giriş Saati</button>
                     </div>
 
                     <button class="btn btn-pay" onclick="masaOdemeHazirla(${i})">💰 ÖDEME AL (Açık Kalır)</button>
@@ -422,12 +387,6 @@
 
     window.masaOdemeHazirla = function(id) {
         let c = cihazVerileri[id];
-        
-        if (c.mod === 2) {
-            alert("Lütfen ödeme almadan önce açık süreyi sonlandırıp (🛑 Fiyatlandır butonu) ücretini belirleyin!");
-            return;
-        }
-        
         if(c.toplam === 0 || c.odeme_alindi) return;
         
         let grupluUrunler = urunleriOzetle(c.urunler);
@@ -448,6 +407,10 @@
                 let fark = c.bitis_ms - new Date().getTime();
                 let kalanDk = fark > 0 ? Math.floor(fark / 60000) : 0;
                 detayEk = `⏳ Kalan Süre: ${kalanDk} Dakika`;
+            } else if (c.mod === 2) {
+                let fark = new Date().getTime() - c.baslangic_ms;
+                let gecenDk = fark > 0 ? Math.floor(fark / 60000) : 0;
+                detayEk = `📈 Oynanan Süre: ${gecenDk} Dakika`;
             }
             
             let grupluUrunler = urunleriOzetle(c.urunler);
@@ -559,3 +522,5 @@
 </script>
 </body>
 </html>
+
+```
