@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARYAPRO VR OTOMASYON</title>
+    <title>ARYAX VR OTOMASYON</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
@@ -35,6 +35,12 @@
         .btn-delete { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; }
         .btn-logout { background: #991b1b; width: auto; padding: 6px 12px; font-size: 12px; float: right; }
         
+        /* Yeni Sipariş Silme Stilleri */
+        .urun-listesi { text-align: left; font-size: 12px; margin-top: 10px; background: #111; padding: 10px; border-radius: 8px; max-height: 100px; overflow-y: auto; }
+        .urun-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 4px 0; }
+        .urun-item:last-child { border-bottom: none; }
+        .btn-urun-sil { background: #ff3e3e; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
         .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; border: 1px solid #333; font-size: 12px; }
         .accordion-content { display:none; background:#111; padding:10px; font-size:12px; border: 1px solid #333; border-top: none; color: #00fbff; line-height: 1.5; }
         .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; border: 1px solid #1e3a8a; margin-bottom: 15px; font-size: 14px; }
@@ -47,7 +53,7 @@
 
 <div id="login-screen">
     <div class="login-box">
-        <h2 style="color: #00fbff; margin-top: 0;">ARYAPRO VR OTOMASYON</h2>
+        <h2 style="color: #00fbff; margin-top: 0;">ARYAX VR OTOMASYON</h2>
         <p style="font-size: 12px; color: #aaa; margin-bottom: 20px;">Sisteme erişmek için giriş yapın.</p>
         <input type="email" id="login-email" placeholder="E-Posta">
         <input type="password" id="login-pass" placeholder="Şifre">
@@ -59,7 +65,7 @@
 <div id="app-wrapper">
     <div id="sidebar">
         <button class="btn btn-logout" id="btn-logout">Çıkış Yap 🔒</button>
-        <h2 style="color: #00fbff; margin-top:0;">🎮 ARYAPRO VR OTOMASYON</h2>
+        <h2 style="color: #00fbff; margin-top:0;">🎮 ARYAX VR OTOMASYON</h2>
         
         <div style="background: #1e3a8a33; padding: 12px; border-radius: 10px; clear: both;">
             <h4 style="margin:0 0 5px 0;">💰 Fiyat Ayarları (₺)</h4>
@@ -99,7 +105,6 @@
 </div>
 
 <script type="module">
-    // Firebase Auth Modülleri Eklendi
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -116,44 +121,55 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const auth = getAuth(app); // Giriş yöneticisi
+    const auth = getAuth(app);
 
     let cihazVerileri = {};
 
-    // GİRİŞ KONTROL SİSTEMİ
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Kullanıcı giriş yaptıysa paneli göster
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-wrapper').style.display = 'flex';
-            sistemiBaslat(); // Verileri çekmeye başla
+            sistemiBaslat();
         } else {
-            // Çıkış yapıldıysa giriş ekranını göster
             document.getElementById('login-screen').style.display = 'flex';
             document.getElementById('app-wrapper').style.display = 'none';
         }
     });
 
-    // Giriş Yap Butonu
     document.getElementById('btn-login').onclick = () => {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-pass').value;
-        signInWithEmailAndPassword(auth, email, pass).catch((error) => {
+        signInWithEmailAndPassword(auth, email, pass).catch(() => {
             document.getElementById('login-error').style.display = 'block';
         });
     };
 
-    // Çıkış Yap Butonu
     document.getElementById('btn-logout').onclick = () => {
-        if(confirm("Sistemden çıkış yapılacak. Emin misiniz?")) {
-            signOut(auth);
-        }
+        if(confirm("Sistemden çıkış yapılacak. Emin misiniz?")) signOut(auth);
     };
 
-    // --- BURADAN SONRASI PANEL FONKSİYONLARIDIR (Eski kodlar tamamen korundu) ---
+    // --- PANEL FONKSİYONLARI ---
 
+    // Detaylı Sipariş Listesi HTML Üretici
+    function siparisListesiOlustur(masaId, urunler) {
+        if (!urunler || urunler.length === 0) return '<div style="color:#aaa; text-align:center;">İstasyon Boş</div>';
+        
+        let html = '<div class="urun-listesi">';
+        urunler.forEach((u, index) => {
+            // Eğer VR süresi ise farklı stil, içecekse farklı stil yapılabilir, şimdilik standart
+            html += `
+                <div class="urun-item">
+                    <span>${u.ad} (${u.fiyat}₺)</span>
+                    <button class="btn-urun-sil" onclick="siparisSil(${masaId}, ${index}, ${u.fiyat}, '${u.ad}')">X</button>
+                </div>`;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    // Gruplu Ozet (Raporlar için)
     function urunleriOzetle(urunler) {
-        if (!urunler || urunler.length === 0) return 'VR Gözlük Boş';
+        if (!urunler || urunler.length === 0) return 'İstasyon Boş';
         let sayac = {};
         urunler.forEach(u => { sayac[u.ad] = (sayac[u.ad] || 0) + 1; });
         let ozet = [];
@@ -172,7 +188,8 @@
                 durum = cihazVerileri[i].odeme_alindi ? '<span class="status-badge paid">ÖDEME ALINDI ✅</span>' : '<span class="status-badge unpaid">ÖDEME BEKLENİYOR ⏳</span>';
             }
 
-            let urunMetni = urunleriOzetle(cihazVerileri[i].urunler);
+            // Artık gruplu özet yerine detaylı, silinebilir liste gösteriyoruz
+            let siparisListesiHTML = siparisListesiOlustur(i, cihazVerileri[i].urunler);
 
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
@@ -181,15 +198,36 @@
                     <div class="timer" id="time-${i}">00:00</div>
                     <div style="margin-bottom:10px;">
                         Borç: <b style="font-size:18px;">${cihazVerileri[i].toplam}₺</b>
-                        <div style="font-size:12px; color:#aaa; margin-top:5px; min-height:15px;">
-                            ${urunMetni}
-                        </div>
+                        ${siparisListesiHTML}
                     </div>
                     <button class="btn btn-vr" onclick="vrEkle(${i},30)">+30 Dakika</button>
                     <button class="btn btn-vr" onclick="vrEkle(${i},60)">+60 Dakika</button>
                     <button class="btn btn-pay" onclick="odemeAl(${i})">💰 ÖDEME AL (MASA AÇIK KALIR)</button>
                     <button class="btn btn-close" onclick="masaKapat(${i})">⏹️ MASAYI KAPAT / SIFIRLA</button>
                 </div>`;
+        }
+    }
+
+    // YENİ EKLENTİ: Sipariş İptal Fonksiyonu
+    window.siparisSil = function(masaId, urunIndex, urunFiyati, urunAd) {
+        if(confirm(`"${urunAd}" siparişi iptal edilecek ve ${urunFiyati}₺ borçtan düşülecek. Emin misiniz?`)) {
+            // İlgili ürünü diziden çıkar
+            cihazVerileri[masaId].urunler.splice(urunIndex, 1);
+            
+            // Toplam borcu güncelle
+            cihazVerileri[masaId].toplam -= urunFiyati;
+            
+            // Eğer VR süresi iptal edildiyse, süreyi de geri al (Opsiyonel, şu an sadece borçtan düşer)
+            if (urunAd.includes("dk VR")) {
+                let dk = parseInt(urunAd.replace("dk VR", ""));
+                cihazVerileri[masaId].bitis_ms -= (dk * 60 * 1000);
+            }
+
+            // Ödeme alındı durumu bozulur çünkü fatura değişti
+            cihazVerileri[masaId].odeme_alindi = false;
+
+            // Veritabanını güncelle
+            set(ref(db, 'aktif_masalar/' + masaId), cihazVerileri[masaId]);
         }
     }
 
@@ -200,6 +238,8 @@
         
         if(!cihazVerileri[id].urunler) cihazVerileri[id].urunler = [];
         cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
+        
+        // Benzersiz ID atamak yerine basit array push yapıyoruz, silmede index kullanıyoruz
         cihazVerileri[id].urunler.push({ ad: `${dk}dk VR`, fiyat: fiyat });
         cihazVerileri[id].toplam += fiyat;
         cihazVerileri[id].odeme_alindi = false; 
@@ -278,7 +318,6 @@
         }
     }, 1000);
 
-    // SADECE GİRİŞ YAPINCA VERİLERİ ÇEK
     function sistemiBaslat() {
         onValue(ref(db, 'aktif_masalar'), (snapshot) => {
             const data = snapshot.val();
