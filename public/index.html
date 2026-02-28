@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Playverse Otomasyon</title>
+    <title>VR Kafe Panel v10</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         #sidebar { width: 350px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
@@ -10,206 +10,139 @@
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .card { background: #1c1c1c; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; position: relative; }
         .card.sure-doldu { border-color: #ff3e3e; box-shadow: 0 0 20px rgba(255, 62, 62, 0.2); }
-        .status-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .paid { background: #059669; } .unpaid { background: #d97706; }
         .timer { font-size: 38px; font-weight: bold; color: #00fbff; margin: 10px 0; font-family: monospace; }
         .btn { cursor: pointer; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 5px; color: white; }
-        .btn-vr { background: #2563eb; } .btn-icecek { background: #d97706; }
-        .btn-pay { background: #8e44ad; font-size: 16px; border: 2px solid #a855f7; margin-top:10px; }
-        .btn-kapat { background: #444; margin-top: 10px; }
+        .btn-vr { background: #2563eb; }
+        .btn-pay { background: #8e44ad; margin-top:10px; }
         input, select { background: #252525; color: white; border: 1px solid #444; padding: 10px; width: 100%; margin: 5px 0; border-radius: 6px; }
-        .urun-satir { display: flex; justify-content: space-between; padding: 4px; background: #252525; margin-top: 2px; border-radius: 4px; font-size: 12px; }
-        .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; border: 1px solid #1e3a8a; }
-        .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; }
-        .accordion-content { display:none; background:#111; padding:10px; font-size:11px; border: 1px solid #333; border-top: none; }
-        .btn-rapor-sil { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; margin-left: 10px; }
-        .btn-rapor-sil:hover { background: #7f1d1d; }
     </style>
 </head>
 <body>
+
 <div id="sidebar">
-    <div style="background: #1e3a8a; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-        <h3 style="margin:0;">⚙️ Fiyatlar</h3>
-        <div style="display:flex; gap:5px;">
-            <input type="number" id="f-30" value="250"> <input type="number" id="f-60" value="450">
-        </div>
-        <div style="display:flex; gap:5px;">
-            <input type="number" id="f-cay" value="15"> <input type="number" id="f-kahve" value="40">
-        </div>
-        <button class="btn" style="background:#4f46e5" onclick="fiyatGuncelle()">Uygula</button>
-    </div>
-    <h3>☕ Kantin</h3>
-    <select id="kantin-urun-tip"><option value="Çay">Çay</option><option value="Kahve">Kahve</option></select>
-    <select id="hedef-masa"><option value="1">Masa 1</option><option value="2">Masa 2</option><option value="3">Masa 3</option><option value="4">Masa 4</option><option value="5">Masa 5</option><option value="6">Masa 6</option><option value="MISAFIR">👤 Misafir</option></select>
-    <button class="btn btn-icecek" onclick="urunEkle()">➕ İçecek Ekle</button>
-    <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
-    <h3>📊 Rapor</h3>
-    <input type="date" id="rep-bas"> <input type="date" id="rep-bit">
-    <button class="btn" style="background:#2563eb" onclick="raporAl()">Getir</button>
-    <div id="rapor-sonuc"></div>
+    <h3>⚙️ Ayarlar & Kantin</h3>
+    <input type="number" id="f-30" value="250" placeholder="30 Dk Fiyat">
+    <input type="number" id="f-60" value="450" placeholder="60 Dk Fiyat">
+    <hr>
+    <select id="hedef-masa">
+        <option value="1">Masa 1</option><option value="2">Masa 2</option>
+        <option value="3">Masa 3</option><option value="4">Masa 4</option>
+        <option value="5">Masa 5</option><option value="6">Masa 6</option>
+    </select>
+    <button class="btn" style="background:#d97706" onclick="urunEkle()">➕ İçecek Ekle (20₺)</button>
 </div>
-<div id="main"><h1 style="margin:0 0 20px 0; color: #00fbff;">🎮 Playverse Otomasyon</h1><div class="grid" id="cihazlar"></div></div>
+
+<div id="main">
+    <h1 style="color: #00fbff;">🎮 vr-kafe-panel</h1>
+    <div class="grid" id="cihazlar"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
 <script>
-    let F = { vr30: 250, vr60: 450, cay: 15, kahve: 40 };
+    // BURAYI FIREBASE'DEN ALDIĞIN KODLARLA DEĞİŞTİR
+ // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCGk6ca-X8wCbLB7xOu5imiH6g23ZmazyQ",
+  authDomain: "vr-kafe-panel.firebaseapp.com",
+  databaseURL: "https://vr-kafe-panel-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "vr-kafe-panel",
+  storageBucket: "vr-kafe-panel.firebasestorage.app",
+  messagingSenderId: "464538264349",
+  appId: "1:464538264349:web:09bf50fd4ac50e1372b7f4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+    firebase.initializeApp(firebaseConfig);
+    const rtdb = firebase.database();
+
     let cihazVerileri = {};
-
-    async function serverKaydet(id) {
-        const c = cihazVerileri[id];
-        await fetch('/api/masa-kaydet', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id, bitis: new Date(c.bitis_ms).toISOString(), borc: c.toplam, urunler: c.urunler, odemeAlindi: c.odemeAlindi })
-        });
-    }
-
-    async function serverSil(id) {
-        await fetch('/api/masa-sil', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id }) });
-    }
 
     function cihazlariOlustur() {
         const grid = document.getElementById('cihazlar');
         grid.innerHTML = ''; 
         for(let i=1; i<=6; i++) {
-            if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, interval: null, urunler: [], toplam: 0, odemeAlindi: false };
-            let sHtml = (cihazVerileri[i].toplam > 0) ? `<span class="status-badge ${cihazVerileri[i].odemeAlindi ? 'paid' : 'unpaid'}">${cihazVerileri[i].odemeAlindi ? 'ÖDEME ALINDI' : 'ÖDEME BEKLENİYOR'}</span>` : '';
-            grid.innerHTML += `<div class="card" id="card-${i}">${sHtml}<h2>Masa #${i}</h2><div class="timer" id="time-${i}">00:00</div><div id="ozet-${i}"></div><button class="btn btn-vr" onclick="vrEkle(${i},30,F.vr30)">+30 Dk</button><button class="btn btn-vr" onclick="vrEkle(${i},60,F.vr60)">+60 Dk</button><button class="btn btn-pay" onclick="odemeAl(${i})">ÖDEME AL</button><button class="btn btn-kapat" onclick="masaKapat(${i})">Sıfırla</button></div>`;
-            guncelOzet(i);
+            if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, urunler: [], toplam: 0 };
+            grid.innerHTML += `
+                <div class="card" id="card-${i}">
+                    <h2>Masa #${i}</h2>
+                    <div class="timer" id="time-${i}">00:00</div>
+                    <div id="ozet-${i}">Borç: ${cihazVerileri[i].toplam}₺</div>
+                    <button class="btn btn-vr" onclick="vrEkle(${i},30)">+30 Dk</button>
+                    <button class="btn btn-vr" onclick="vrEkle(${i},60)">+60 Dk</button>
+                    <button class="btn btn-pay" onclick="masaKapat(${i})">MASAYI SIFIRLA</button>
+                </div>`;
         }
     }
 
-    function vrEkle(id, dk, u) {
+    function vrEkle(id, dk) {
+        let fiyat = dk === 30 ? parseInt(document.getElementById('f-30').value) : parseInt(document.getElementById('f-60').value);
         let simdi = new Date().getTime();
-        // Eğer masa zaten açıksa bitişe ekle, değilse şimdiden itibaren başlat
         let temel = (cihazVerileri[id].bitis_ms > simdi) ? cihazVerileri[id].bitis_ms : simdi;
+        
         cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
-        cihazVerileri[id].urunler.push({ ad: `${dk}dk VR`, fiyat: u });
-        cihazVerileri[id].toplam += u;
-        cihazVerileri[id].odemeAlindi = false;
-        if(!cihazVerileri[id].interval) cihazVerileri[id].interval = setInterval(()=>sayac(id), 1000);
-        serverKaydet(id);
+        cihazVerileri[id].toplam += fiyat;
+        
+        firebaseKaydet(id);
         cihazlariOlustur();
     }
 
     function urunEkle() {
-        const h = document.getElementById('hedef-masa').value;
-        const uTip = document.getElementById('kantin-urun-tip').value;
-        const fiyat = uTip === 'Çay' ? F.cay : F.kahve;
-        if(h === "MISAFIR") {
-            const y = confirm(`${uTip} satışı. Nakit mi?`) ? 'NAKIT' : 'KREDI_KARTI';
-            fetch('/api/islem-ekle', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tur:'KANTIN', urun_adi:`Misafir: ${uTip}`, tutar:fiyat, odeme_yontemi:y})});
-        } else {
-            cihazVerileri[h].urunler.push({ ad: uTip, fiyat: fiyat });
-            cihazVerileri[h].toplam += fiyat;
-            cihazVerileri[h].odemeAlindi = false;
-            serverKaydet(h);
-            cihazlariOlustur();
-        }
-    }
-
-    function sayac(id) {
-        let kalan_saniye = Math.floor((cihazVerileri[id].bitis_ms - new Date().getTime()) / 1000);
-        const tEl = document.getElementById(`time-${id}`);
-        const cEl = document.getElementById(`card-${id}`);
-        if(tEl) {
-            let a = Math.abs(kalan_saniye), m = Math.floor(a/60), s = a%60;
-            tEl.innerText = (kalan_saniye < 0 ? "-" : "") + `${m}:${s < 10 ? '0' + s : s}`;
-            if(kalan_saniye < 0) cEl.classList.add('sure-doldu'); else cEl.classList.remove('sure-doldu');
-        }
-    }
-
-    function guncelOzet(id) {
-        const o = document.getElementById(`ozet-${id}`);
-        if(o) o.innerHTML = `Borç: <b>${cihazVerileri[id].toplam}₺</b><div style="max-height:60px; overflow:auto;">` + cihazVerileri[id].urunler.map(u => `<div class="urun-satir">${u.ad}</div>`).join('') + "</div>";
-    }
-
-    async function odemeAl(id) {
-        let t = prompt("Tutar:", cihazVerileri[id].toplam);
-        if(!t) return;
-        const y = confirm("Nakit mi?") ? 'NAKIT' : 'KREDI_KARTI';
-        const ozet = cihazVerileri[id].urunler.map(u => u.ad).join(", ");
-        await fetch('/api/islem-ekle', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tur:'ÖDEME', urun_adi:`Masa #${id} (${ozet})`, tutar:parseFloat(t), odeme_yontemi:y})});
-        cihazVerileri[id].odemeAlindi = true;
-        serverKaydet(id);
+        let id = document.getElementById('hedef-masa').value;
+        cihazVerileri[id].toplam += 20;
+        firebaseKaydet(id);
         cihazlariOlustur();
+    }
+
+    function firebaseKaydet(id) {
+        rtdb.ref('aktif_masalar/' + id).set({
+            bitis_ms: cihazVerileri[id].bitis_ms,
+            toplam: cihazVerileri[id].toplam
+        });
     }
 
     async function masaKapat(id) {
-        if(cihazVerileri[id].toplam > 0 && !confirm("Emin misiniz?")) return;
-        clearInterval(cihazVerileri[id].interval);
-        cihazVerileri[id] = null;
-        await serverSil(id);
+        if(!confirm("Masa sıfırlansın mı?")) return;
+        await rtdb.ref('aktif_masalar/' + id).remove();
+        cihazVerileri[id] = { bitis_ms: 0, urunler: [], toplam: 0 };
         cihazlariOlustur();
     }
 
-    async function raporAl() {
-    const bas = document.getElementById('rep-bas').value;
-    const bit = document.getElementById('rep-bit').value;
-    if(!bas || !bit) return alert("Lütfen tarih seçin.");
-
-    const res = await fetch(`/api/rapor?baslangic=${bas}&bitis=${bit}`);
-    const data = await res.json();
-    let n=0, k=0, html = '';
-
-    data.forEach(v => {
-        if(v.odeme_yontemi==='NAKIT') n+=v.tutar; else k+=v.tutar;
-        
-        html += `
-            <div style="margin-top:5px; position: relative;">
-                <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <span>${v.saat} | ${v.urun_adi.split('(')[0]}</span>
-                    <span>
-                        ${v.tutar}₺ ▾
-                        <button class="btn-rapor-sil" onclick="event.stopPropagation(); raporKaydiSil(${v.id})">Sil</button>
-                    </span>
-                </div>
-                <div class="accordion-content">
-                    Detay: ${v.urun_adi} <br> 
-                    Ödeme: ${v.odeme_yontemi} <br>
-                    ID: #${v.id}
-                </div>
-            </div>`;
-    });
-    document.getElementById('rapor-sonuc').innerHTML = `<div class="rapor-ozet-box">Nakit: ${n}₺ | Kart: ${k}₺<hr>Toplam: ${n+k}₺</div>` + html;
-}
-
-// Silme Fonksiyonu
-async function raporKaydiSil(id) {
-    if(!confirm("Bu rapor kaydı kalıcı olarak silinecek. Emin misiniz?")) return;
-
-    const res = await fetch('/api/islem-sil', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ id })
-    });
-
-    const result = await res.json();
-    if(result.success) {
-        alert("Kayıt silindi.");
-        raporAl(); // Listeyi güncelle
-    } else {
-        alert("Hata oluştu.");
+    function sayac(id) {
+        if(!cihazVerileri[id] || cihazVerileri[id].bitis_ms === 0) return;
+        let kalan_saniye = Math.floor((cihazVerileri[id].bitis_ms - new Date().getTime()) / 1000);
+        const tEl = document.getElementById(`time-${id}`);
+        if(tEl) {
+            let a = Math.abs(kalan_saniye), m = Math.floor(a/60), s = a%60;
+            tEl.innerText = (kalan_saniye < 0 ? "-" : "") + `${m}:${s < 10 ? '0' + s : s}`;
+            if(kalan_saniye < 0) document.getElementById(`card-${id}`).classList.add('sure-doldu');
+        }
     }
-}
 
-// Akordiyonu açıp kapatmak için yardımcı fonksiyon (ayrıca ekle)
-function toggleAccordion(el) {
-    const content = el.nextElementSibling;
-    content.style.display = content.style.display === 'none' ? 'block' : 'none';
-}
+    setInterval(() => { for(let i=1; i<=6; i++) sayac(i); }, 1000);
 
-    window.onload = async () => {
-        const res = await fetch('/api/aktif-masalar');
-        const data = await res.json();
-        data.forEach(m => {
-            cihazVerileri[m.masa_id] = { bitis_ms: new Date(m.bitis_zamani).getTime(), urunler: JSON.parse(m.urunler), toplam: m.toplam_borc, odemeAlindi: !!m.odeme_alindi };
-            cihazVerileri[m.masa_id].interval = setInterval(()=>sayac(m.masa_id), 1000);
+    window.onload = () => {
+        rtdb.ref('aktif_masalar').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                Object.keys(data).forEach(id => {
+                    cihazVerileri[id] = { 
+                        bitis_ms: data[id].bitis_ms, 
+                        toplam: data[id].toplam || 0 
+                    };
+                });
+                cihazlariOlustur();
+            }
         });
-        cihazlariOlustur();
-        const bugun = new Date().toISOString().split('T')[0];
-        document.getElementById('rep-bas').value = bugun; document.getElementById('rep-bit').value = bugun;
     };
-    function fiyatGuncelle() { F.vr30=parseInt(document.getElementById('f-30').value); F.vr60=parseInt(document.getElementById('f-60').value); F.cay=parseInt(document.getElementById('f-cay').value); F.kahve=parseInt(document.getElementById('f-kahve').value); }
 </script>
 </body>
 </html>
