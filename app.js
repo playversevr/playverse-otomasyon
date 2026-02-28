@@ -68,3 +68,17 @@ app.get('/api/rapor', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Sunucu ${PORT} portunda aktif.`));
+// ... (mevcut kodların devamı)
+
+// Rapor Kaydını Sil
+app.post('/api/islem-sil', async (req, res) => {
+    const { id } = req.body;
+    try {
+        await db.run("DELETE FROM islemler WHERE id = ?", [id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ... (PORT ve listen kısmı)
