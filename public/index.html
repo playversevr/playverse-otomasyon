@@ -22,6 +22,8 @@
         .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; border: 1px solid #1e3a8a; }
         .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; }
         .accordion-content { display:none; background:#111; padding:10px; font-size:11px; border: 1px solid #333; border-top: none; }
+        .btn-rapor-sil { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; margin-left: 10px; }
+        .btn-rapor-sil:hover { background: #7f1d1d; }
     </style>
 </head>
 <body>
@@ -141,15 +143,60 @@
     }
 
     async function raporAl() {
-        const res = await fetch(`/api/rapor?baslangic=${document.getElementById('rep-bas').value}&bitis=${document.getElementById('rep-bit').value}`);
-        const data = await res.json();
-        let n=0, k=0, html = '';
-        data.forEach(v => {
-            if(v.odeme_yontemi==='NAKIT') n+=v.tutar; else k+=v.tutar;
-            html += `<div class="accordion-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"><span>${v.saat} | ${v.urun_adi.split('(')[0]}</span><span>${v.tutar}₺ ▾</span></div><div class="accordion-content">Detay: ${v.urun_adi} <br> Ödeme: ${v.odeme_yontemi}</div>`;
-        });
-        document.getElementById('rapor-sonuc').innerHTML = `<div class="rapor-ozet-box">Nakit: ${n}₺ | Kart: ${k}₺<hr>Toplam: ${n+k}₺</div>` + html;
+    const bas = document.getElementById('rep-bas').value;
+    const bit = document.getElementById('rep-bit').value;
+    if(!bas || !bit) return alert("Lütfen tarih seçin.");
+
+    const res = await fetch(`/api/rapor?baslangic=${bas}&bitis=${bit}`);
+    const data = await res.json();
+    let n=0, k=0, html = '';
+
+    data.forEach(v => {
+        if(v.odeme_yontemi==='NAKIT') n+=v.tutar; else k+=v.tutar;
+        
+        html += `
+            <div style="margin-top:5px; position: relative;">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>${v.saat} | ${v.urun_adi.split('(')[0]}</span>
+                    <span>
+                        ${v.tutar}₺ ▾
+                        <button class="btn-rapor-sil" onclick="event.stopPropagation(); raporKaydiSil(${v.id})">Sil</button>
+                    </span>
+                </div>
+                <div class="accordion-content">
+                    Detay: ${v.urun_adi} <br> 
+                    Ödeme: ${v.odeme_yontemi} <br>
+                    ID: #${v.id}
+                </div>
+            </div>`;
+    });
+    document.getElementById('rapor-sonuc').innerHTML = `<div class="rapor-ozet-box">Nakit: ${n}₺ | Kart: ${k}₺<hr>Toplam: ${n+k}₺</div>` + html;
+}
+
+// Silme Fonksiyonu
+async function raporKaydiSil(id) {
+    if(!confirm("Bu rapor kaydı kalıcı olarak silinecek. Emin misiniz?")) return;
+
+    const res = await fetch('/api/islem-sil', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id })
+    });
+
+    const result = await res.json();
+    if(result.success) {
+        alert("Kayıt silindi.");
+        raporAl(); // Listeyi güncelle
+    } else {
+        alert("Hata oluştu.");
     }
+}
+
+// Akordiyonu açıp kapatmak için yardımcı fonksiyon (ayrıca ekle)
+function toggleAccordion(el) {
+    const content = el.nextElementSibling;
+    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+}
 
     window.onload = async () => {
         const res = await fetch('/api/aktif-masalar');
