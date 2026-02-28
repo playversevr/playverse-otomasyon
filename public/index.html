@@ -2,105 +2,91 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>PLAYVERSE VR MERKEZİ KONTROL SİSTEMİ</title>
+    <title>Playverse Otomasyon</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        #sidebar { width: 350px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; box-sizing: border-box; }
+        #sidebar { width: 350px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
         #main { flex: 1; padding: 25px; background: #0b0b0b; overflow-y: auto; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .card { background: #1c1c1c; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; position: relative; }
         .card.sure-doldu { border-color: #ff3e3e; box-shadow: 0 0 20px rgba(255, 62, 62, 0.2); }
         .status-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .paid { background: #059669; color: white; }
-        .unpaid { background: #d97706; color: white; }
+        .paid { background: #059669; } .unpaid { background: #d97706; }
         .timer { font-size: 38px; font-weight: bold; color: #00fbff; margin: 10px 0; font-family: monospace; }
-        .btn { cursor: pointer; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s; color: white; }
-        .btn-vr { background: #2563eb; }
-        .btn-icecek { background: #d97706; }
+        .btn { cursor: pointer; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 5px; color: white; }
+        .btn-vr { background: #2563eb; } .btn-icecek { background: #d97706; }
         .btn-pay { background: #8e44ad; font-size: 16px; border: 2px solid #a855f7; margin-top:10px; }
         .btn-kapat { background: #444; margin-top: 10px; }
-        .btn-sil { background: #991b1b; color: white; border: none; border-radius: 4px; cursor: pointer; width: 22px; height: 22px; font-weight: bold; }
-        input, select { background: #252525; color: white; border: 1px solid #444; padding: 10px; width: 100%; margin: 5px 0; border-radius: 6px; box-sizing: border-box; }
-        .masa-ozet { font-size: 12px; color: #888; margin: 10px 0; border-top: 1px solid #333; padding-top: 10px; text-align: left; }
-        .urun-satir { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; background: #252525; padding: 4px 10px; border-radius: 4px; }
-        .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #1e3a8a; }
-        .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; font-weight:bold; border-bottom:1px solid #333; margin-top:5px; border-radius:5px; }
-        .accordion-content { display:none; background:#111; padding:10px; font-size:11px; border-radius: 0 0 5px 5px; border: 1px solid #333; border-top: none; }
+        input, select { background: #252525; color: white; border: 1px solid #444; padding: 10px; width: 100%; margin: 5px 0; border-radius: 6px; }
+        .urun-satir { display: flex; justify-content: space-between; padding: 4px; background: #252525; margin-top: 2px; border-radius: 4px; font-size: 12px; }
+        .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; border: 1px solid #1e3a8a; }
+        .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; }
+        .accordion-content { display:none; background:#111; padding:10px; font-size:11px; border: 1px solid #333; border-top: none; }
     </style>
 </head>
 <body>
 <div id="sidebar">
     <div style="background: #1e3a8a; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-        <h3 style="margin:0; font-size: 16px;">⚙️ Fiyat Ayarları</h3>
+        <h3 style="margin:0;">⚙️ Fiyatlar</h3>
         <div style="display:flex; gap:5px;">
-            <div><label style="font-size:10px">VR 30(₺)</label><input type="number" id="f-30" value="250"></div>
-            <div><label style="font-size:10px">VR 60(₺)</label><input type="number" id="f-60" value="450"></div>
+            <input type="number" id="f-30" value="250"> <input type="number" id="f-60" value="450">
         </div>
         <div style="display:flex; gap:5px;">
-            <div><label style="font-size:10px">Çay(₺)</label><input type="number" id="f-cay" value="15"></div>
-            <div><label style="font-size:10px">Kahve(₺)</label><input type="number" id="f-kahve" value="40"></div>
+            <input type="number" id="f-cay" value="15"> <input type="number" id="f-kahve" value="40">
         </div>
-        <button class="btn" style="background:#4f46e5" onclick="fiyatGuncelle()">Fiyatları Uygula</button>
+        <button class="btn" style="background:#4f46e5" onclick="fiyatGuncelle()">Uygula</button>
     </div>
-
-    <h3>☕ Servis & Kantin</h3>
-    <select id="kantin-urun-tip">
-        <option value="Çay">🍵 Çay</option>
-        <option value="Kahve">☕ Kahve</option>
-    </select>
-    <select id="hedef-masa">
-        <option value="MISAFIR">👤 Misafir (Peşin)</option>
-        <option value="1">Masa 1</option><option value="2">Masa 2</option>
-        <option value="3">Masa 3</option><option value="4">Masa 4</option>
-        <option value="5">Masa 5</option><option value="6">Masa 6</option>
-    </select>
+    <h3>☕ Kantin</h3>
+    <select id="kantin-urun-tip"><option value="Çay">Çay</option><option value="Kahve">Kahve</option></select>
+    <select id="hedef-masa"><option value="1">Masa 1</option><option value="2">Masa 2</option><option value="3">Masa 3</option><option value="4">Masa 4</option><option value="5">Masa 5</option><option value="6">Masa 6</option><option value="MISAFIR">👤 Misafir</option></select>
     <button class="btn btn-icecek" onclick="urunEkle()">➕ İçecek Ekle</button>
-
     <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
-
-    <h3>📊 Raporlama</h3>
-    <input type="date" id="rep-bas">
-    <input type="date" id="rep-bit">
-    <button class="btn" style="background:#2563eb" onclick="raporAl()">Raporu Getir</button>
+    <h3>📊 Rapor</h3>
+    <input type="date" id="rep-bas"> <input type="date" id="rep-bit">
+    <button class="btn" style="background:#2563eb" onclick="raporAl()">Getir</button>
     <div id="rapor-sonuc"></div>
 </div>
-
-<div id="main">
-    <h1 style="margin:0 0 20px 0; color: #00fbff;">🎮 PLAYVERSE VR MERKEZİ KONTROL SİSTEMİ</h1>
-    <div class="grid" id="cihazlar"></div>
-</div>
+<div id="main"><h1 style="margin:0 0 20px 0; color: #00fbff;">🎮 Playverse Otomasyon</h1><div class="grid" id="cihazlar"></div></div>
 
 <script>
     let F = { vr30: 250, vr60: 450, cay: 15, kahve: 40 };
     let cihazVerileri = {};
 
-    function fiyatGuncelle() {
-        F.vr30 = parseFloat(document.getElementById('f-30').value);
-        F.vr60 = parseFloat(document.getElementById('f-60').value);
-        F.cay = parseFloat(document.getElementById('f-cay').value);
-        F.kahve = parseFloat(document.getElementById('f-kahve').value);
-        cihazlariOlustur();
+    async function serverKaydet(id) {
+        const c = cihazVerileri[id];
+        await fetch('/api/masa-kaydet', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id, bitis: new Date(c.bitis_ms).toISOString(), borc: c.toplam, urunler: c.urunler, odemeAlindi: c.odemeAlindi })
+        });
+    }
+
+    async function serverSil(id) {
+        await fetch('/api/masa-sil', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id }) });
     }
 
     function cihazlariOlustur() {
         const grid = document.getElementById('cihazlar');
         grid.innerHTML = ''; 
         for(let i=1; i<=6; i++) {
-            if(!cihazVerileri[i]) cihazVerileri[i] = { kalan: 0, interval: null, urunler: [], toplam: 0, odemeAlindi: false };
-            let statusHtml = (cihazVerileri[i].toplam > 0) ? `<span class="status-badge ${cihazVerileri[i].odemeAlindi ? 'paid' : 'unpaid'}">${cihazVerileri[i].odemeAlindi ? 'ÖDEME ALINDI' : 'ÖDEME BEKLENİYOR'}</span>` : '';
-            grid.innerHTML += `
-                <div class="card" id="card-${i}">
-                    ${statusHtml}
-                    <h2>Masa #${i}</h2>
-                    <div class="timer" id="time-${i}">00:00</div>
-                    <div class="masa-ozet" id="ozet-${i}"></div>
-                    <button class="btn btn-vr" onclick="vrEkle(${i},30,F.vr30)">+30 Dk</button>
-                    <button class="btn btn-vr" onclick="vrEkle(${i},60,F.vr60)">+60 Dk</button>
-                    <button class="btn btn-pay" onclick="odemeAl(${i})">ÖDEME AL / KAPAT</button>
-                    <button class="btn btn-kapat" onclick="masaKapat(${i})">Sıfırla</button>
-                </div>`;
+            if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, interval: null, urunler: [], toplam: 0, odemeAlindi: false };
+            let sHtml = (cihazVerileri[i].toplam > 0) ? `<span class="status-badge ${cihazVerileri[i].odemeAlindi ? 'paid' : 'unpaid'}">${cihazVerileri[i].odemeAlindi ? 'ÖDEME ALINDI' : 'ÖDEME BEKLENİYOR'}</span>` : '';
+            grid.innerHTML += `<div class="card" id="card-${i}">${sHtml}<h2>Masa #${i}</h2><div class="timer" id="time-${i}">00:00</div><div id="ozet-${i}"></div><button class="btn btn-vr" onclick="vrEkle(${i},30,F.vr30)">+30 Dk</button><button class="btn btn-vr" onclick="vrEkle(${i},60,F.vr60)">+60 Dk</button><button class="btn btn-pay" onclick="odemeAl(${i})">ÖDEME AL</button><button class="btn btn-kapat" onclick="masaKapat(${i})">Sıfırla</button></div>`;
             guncelOzet(i);
         }
+    }
+
+    function vrEkle(id, dk, u) {
+        let simdi = new Date().getTime();
+        // Eğer masa zaten açıksa bitişe ekle, değilse şimdiden itibaren başlat
+        let temel = (cihazVerileri[id].bitis_ms > simdi) ? cihazVerileri[id].bitis_ms : simdi;
+        cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
+        cihazVerileri[id].urunler.push({ ad: `${dk}dk VR`, fiyat: u });
+        cihazVerileri[id].toplam += u;
+        cihazVerileri[id].odemeAlindi = false;
+        if(!cihazVerileri[id].interval) cihazVerileri[id].interval = setInterval(()=>sayac(id), 1000);
+        serverKaydet(id);
+        cihazlariOlustur();
     }
 
     function urunEkle() {
@@ -109,113 +95,74 @@
         const fiyat = uTip === 'Çay' ? F.cay : F.kahve;
         if(h === "MISAFIR") {
             const y = confirm(`${uTip} satışı. Nakit mi?`) ? 'NAKIT' : 'KREDI_KARTI';
-            dbKaydet('KANTIN', `Misafir: ${uTip}`, fiyat, y);
-            alert("Satış kaydedildi.");
+            fetch('/api/islem-ekle', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tur:'KANTIN', urun_adi:`Misafir: ${uTip}`, tutar:fiyat, odeme_yontemi:y})});
         } else {
             cihazVerileri[h].urunler.push({ ad: uTip, fiyat: fiyat });
             cihazVerileri[h].toplam += fiyat;
             cihazVerileri[h].odemeAlindi = false;
+            serverKaydet(h);
             cihazlariOlustur();
         }
     }
 
-    function urunSil(id, idx) {
-        cihazVerileri[id].toplam -= cihazVerileri[id].urunler[idx].fiyat;
-        cihazVerileri[id].urunler.splice(idx, 1);
-        cihazlariOlustur();
-    }
-
-    function vrEkle(id, dk, u) {
-        cihazVerileri[id].kalan += dk * 60;
-        cihazVerileri[id].urunler.push({ ad: `${dk}dk VR`, fiyat: u });
-        cihazVerileri[id].toplam += u;
-        cihazVerileri[id].odemeAlindi = false;
-        if(!cihazVerileri[id].interval) cihazVerileri[id].interval = setInterval(()=>sayac(id), 1000);
-        cihazlariOlustur();
+    function sayac(id) {
+        let kalan_saniye = Math.floor((cihazVerileri[id].bitis_ms - new Date().getTime()) / 1000);
+        const tEl = document.getElementById(`time-${id}`);
+        const cEl = document.getElementById(`card-${id}`);
+        if(tEl) {
+            let a = Math.abs(kalan_saniye), m = Math.floor(a/60), s = a%60;
+            tEl.innerText = (kalan_saniye < 0 ? "-" : "") + `${m}:${s < 10 ? '0' + s : s}`;
+            if(kalan_saniye < 0) cEl.classList.add('sure-doldu'); else cEl.classList.remove('sure-doldu');
+        }
     }
 
     function guncelOzet(id) {
         const o = document.getElementById(`ozet-${id}`);
-        if(!o) return;
-        let html = `Borç: <b>${cihazVerileri[id].toplam}₺</b><div style="margin-top:5px">`;
-        cihazVerileri[id].urunler.forEach((u, i) => {
-            html += `<div class="urun-satir"><span>${u.ad}</span><button class="btn-sil" onclick="urunSil(${id}, ${i})">−</button></div>`;
-        });
-        o.innerHTML = html + "</div>";
+        if(o) o.innerHTML = `Borç: <b>${cihazVerileri[id].toplam}₺</b><div style="max-height:60px; overflow:auto;">` + cihazVerileri[id].urunler.map(u => `<div class="urun-satir">${u.ad}</div>`).join('') + "</div>";
     }
 
     async function odemeAl(id) {
-        if(cihazVerileri[id].toplam <= 0) return alert("Borç yok.");
-        let t = prompt(`Masa #${id} Tahsilat:`, cihazVerileri[id].toplam);
-        if(t === null) return;
+        let t = prompt("Tutar:", cihazVerileri[id].toplam);
+        if(!t) return;
         const y = confirm("Nakit mi?") ? 'NAKIT' : 'KREDI_KARTI';
-        
-        // Detayları birleştiriyoruz (Örn: "Masa #1 Tahsilat (2 Çay, 1 60dk VR)")
-        const urunOzet = cihazVerileri[id].urunler.reduce((acc, curr) => {
-            acc[curr.ad] = (acc[curr.ad] || 0) + 1;
-            return acc;
-        }, {});
-        const detayMetni = Object.entries(urunOzet).map(([ad, count]) => `${count}x ${ad}`).join(", ");
-        
-        await dbKaydet('ÖDEME', `Masa #${id} Tahsilat (${detayMetni})`, parseFloat(t), y);
+        const ozet = cihazVerileri[id].urunler.map(u => u.ad).join(", ");
+        await fetch('/api/islem-ekle', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tur:'ÖDEME', urun_adi:`Masa #${id} (${ozet})`, tutar:parseFloat(t), odeme_yontemi:y})});
         cihazVerileri[id].odemeAlindi = true;
+        serverKaydet(id);
         cihazlariOlustur();
-        raporAl();
     }
 
-    async function dbKaydet(tur, urun, tutar, yontem) {
-        await fetch('/api/islem-ekle', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tur, urun_adi:urun, tutar, odeme_yontemi:yontem})});
+    async function masaKapat(id) {
+        if(cihazVerileri[id].toplam > 0 && !confirm("Emin misiniz?")) return;
+        clearInterval(cihazVerileri[id].interval);
+        cihazVerileri[id] = null;
+        await serverSil(id);
+        cihazlariOlustur();
     }
 
     async function raporAl() {
-        const b = document.getElementById('rep-bas').value;
-        const bit = document.getElementById('rep-bit').value;
-        if(!b || !bit) return;
-        const res = await fetch(`/api/rapor?baslangic=${b}&bitis=${bit}`);
+        const res = await fetch(`/api/rapor?baslangic=${document.getElementById('rep-bas').value}&bitis=${document.getElementById('rep-bit').value}`);
         const data = await res.json();
         let n=0, k=0, html = '';
         data.forEach(v => {
             if(v.odeme_yontemi==='NAKIT') n+=v.tutar; else k+=v.tutar;
-            
-            // Ürün adındaki detayları ayıklıyoruz
-            const anaBaslik = v.urun_adi.split(" (")[0];
-            const detaylar = v.urun_adi.includes("(") ? v.urun_adi.split("(")[1].replace(")", "") : "Detay yok";
-
-            html += `
-                <div style="margin-top:5px;">
-                    <div class="accordion-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-                        <span>${v.saat} | ${anaBaslik}</span>
-                        <span style="color:#fbbf24">${v.tutar}₺ ▾</span>
-                    </div>
-                    <div class="accordion-content">
-                        <b>Adisyon İçeriği:</b><br>${detaylar}<br><br>
-                        <b>Ödeme Türü:</b> ${v.odeme_yontemi}
-                    </div>
-                </div>`;
+            html += `<div class="accordion-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"><span>${v.saat} | ${v.urun_adi.split('(')[0]}</span><span>${v.tutar}₺ ▾</span></div><div class="accordion-content">Detay: ${v.urun_adi} <br> Ödeme: ${v.odeme_yontemi}</div>`;
         });
         document.getElementById('rapor-sonuc').innerHTML = `<div class="rapor-ozet-box">Nakit: ${n}₺ | Kart: ${k}₺<hr>Toplam: ${n+k}₺</div>` + html;
     }
 
-    function sayac(id) {
-        let c = cihazVerileri[id];
-        c.kalan--;
-        let a = Math.abs(c.kalan), m = Math.floor(a/60), s = a%60;
-        document.getElementById(`time-${id}`).innerText = (c.kalan<0?"-":"")+`${m}:${s < 10 ? '0' + s : s}`;
-        if(c.kalan < 0) document.getElementById(`card-${id}`).classList.add('sure-doldu');
-    }
-
-    function masaKapat(id) {
-        if(confirm("Masayı sıfırlamak istiyor musunuz?")) {
-            clearInterval(cihazVerileri[id].interval);
-            cihazVerileri[id] = null;
-            cihazlariOlustur();
-        }
-    }
-
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('rep-bas').value = today;
-    document.getElementById('rep-bit').value = today;
-    cihazlariOlustur();
+    window.onload = async () => {
+        const res = await fetch('/api/aktif-masalar');
+        const data = await res.json();
+        data.forEach(m => {
+            cihazVerileri[m.masa_id] = { bitis_ms: new Date(m.bitis_zamani).getTime(), urunler: JSON.parse(m.urunler), toplam: m.toplam_borc, odemeAlindi: !!m.odeme_alindi };
+            cihazVerileri[m.masa_id].interval = setInterval(()=>sayac(m.masa_id), 1000);
+        });
+        cihazlariOlustur();
+        const bugun = new Date().toISOString().split('T')[0];
+        document.getElementById('rep-bas').value = bugun; document.getElementById('rep-bit').value = bugun;
+    };
+    function fiyatGuncelle() { F.vr30=parseInt(document.getElementById('f-30').value); F.vr60=parseInt(document.getElementById('f-60').value); F.cay=parseInt(document.getElementById('f-cay').value); F.kahve=parseInt(document.getElementById('f-kahve').value); }
 </script>
 </body>
 </html>
