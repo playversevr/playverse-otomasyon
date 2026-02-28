@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VR Pro v14 - Adisyon Sistemi</title>
+    <title>VR Pro v15 - Detaylı Raporlama</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0b0b; color: #e0e0e0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         #sidebar { width: 360px; background: #151515; padding: 20px; border-right: 2px solid #222; overflow-y: auto; }
@@ -28,6 +28,7 @@
         .btn-delete { background: #991b1b; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 10px; }
         
         .accordion-header { background:#222; padding:10px; cursor:pointer; display:flex; justify-content:space-between; margin-top:5px; border-radius:5px; border: 1px solid #333; font-size: 12px; }
+        .accordion-content { display:none; background:#111; padding:10px; font-size:12px; border: 1px solid #333; border-top: none; color: #00fbff; line-height: 1.5; }
         .rapor-ozet-box { background: #1e3a8a33; padding: 15px; border-radius: 10px; border: 1px solid #1e3a8a; margin-bottom: 15px; font-size: 14px; }
         
         input, select { background: #252525; color: white; border: 1px solid #444; padding: 8px; width: 100%; margin: 4px 0; border-radius: 6px; box-sizing: border-box; }
@@ -93,6 +94,20 @@
     const db = getDatabase(app);
     let cihazVerileri = {};
 
+    // Ürünleri gruplayıp (Örn: 3x Çay, 1x 30dk VR) metin olarak döndüren fonksiyon
+    function urunleriOzetle(urunler) {
+        if (!urunler || urunler.length === 0) return 'İstasyon Boş';
+        let sayac = {};
+        urunler.forEach(u => {
+            sayac[u.ad] = (sayac[u.ad] || 0) + 1;
+        });
+        let ozet = [];
+        for (let ad in sayac) {
+            ozet.push(`${sayac[ad]}x ${ad}`);
+        }
+        return ozet.join(", ");
+    }
+
     window.cihazlariOlustur = function() {
         const grid = document.getElementById('cihazlar');
         grid.innerHTML = ''; 
@@ -104,6 +119,9 @@
                 durum = cihazVerileri[i].odeme_alindi ? '<span class="status-badge paid">ÖDEME ALINDI ✅</span>' : '<span class="status-badge unpaid">ÖDEME BEKLENİYOR ⏳</span>';
             }
 
+            // Ekranda karmaşa olmaması için ürünleri grupla (Örn: 2x Çay)
+            let urunMetni = urunleriOzetle(cihazVerileri[i].urunler);
+
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
                     ${durum}
@@ -111,8 +129,8 @@
                     <div class="timer" id="time-${i}">00:00</div>
                     <div style="margin-bottom:10px;">
                         Borç: <b style="font-size:18px;">${cihazVerileri[i].toplam}₺</b>
-                        <div style="font-size:11px; opacity:0.5; margin-top:5px;">
-                            ${cihazVerileri[i].urunler ? cihazVerileri[i].urunler.map(u => u.ad).join(", ") : 'Masa Boş'}
+                        <div style="font-size:12px; color:#aaa; margin-top:5px; min-height:15px;">
+                            ${urunMetni}
                         </div>
                     </div>
                     <button class="btn btn-vr" onclick="vrEkle(${i},30)">+30 Dakika</button>
@@ -132,7 +150,7 @@
         cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
         cihazVerileri[id].urunler.push({ ad: `${dk}dk VR`, fiyat: fiyat });
         cihazVerileri[id].toplam += fiyat;
-        cihazVerileri[id].odeme_alindi = false; // Yeni ürün/süre eklenince ödeme durumu sıfırlanır
+        cihazVerileri[id].odeme_alindi = false; 
         set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
     }
 
@@ -142,8 +160,8 @@
         let fiyat = uTip === "Çay" ? parseInt(document.getElementById('f-cay').value) : (uTip === "Kahve" ? parseInt(document.getElementById('f-kahve').value) : 15);
         
         if(h === "MISAFIR") {
-            let yontem = confirm("Nakit için TAMAM, Kart için İPTAL.") ? "NAKİT" : "KART";
-            raporKaydet("Dış Satış: " + uTip, fiyat, yontem);
+            let yontem = confirm("Dış Satış Ödemesi:\nNakit için TAMAM, Kart için İPTAL seçin.") ? "NAKİT" : "KART";
+            raporKaydet("Dış Satış", tutar, yontem, `1x ${uTip}`);
         } else {
             if(!cihazVerileri[h].urunler) cihazVerileri[h].urunler = [];
             cihazVerileri[h].urunler.push({ ad: uTip, fiyat: fiyat });
@@ -159,23 +177,37 @@
         
         let yontem = confirm(`${c.toplam}₺ ödeme yöntemi: \nNAKİT için TAMAM \nKART için İPTAL seçin.`) ? "NAKİT" : "KART";
         
-        raporKaydet(`Masa #${id}`, c.toplam, yontem);
+        // Ödeme alındığı andaki kalan dakikayı hesapla
+        let kalanDk = 0;
+        let fark = c.bitis_ms - new Date().getTime();
+        if (fark > 0) {
+            kalanDk = Math.floor(fark / 60000);
+        }
         
-        // Sadece ödeme durumunu güncelle, masayı silme
+        // Ürünleri grupla (Örn: 2x Çay, 1x 30dk VR)
+        let grupluUrunler = urunleriOzetle(c.urunler);
+        let detayMetni = `${grupluUrunler} <br> ⏳ <b>Kalan Süre: ${kalanDk} Dakika</b>`;
+        
+        raporKaydet(`Masa #${id}`, c.toplam, yontem, detayMetni);
+        
         cihazVerileri[id].odeme_alindi = true;
         set(ref(db, 'aktif_masalar/' + id), cihazVerileri[id]);
     }
 
     window.masaKapat = function(id) {
         if(!cihazVerileri[id].odeme_alindi && cihazVerileri[id].toplam > 0) {
-            if(!confirm("Ödeme henüz alınmadı! Yine de masayı kapatmak istiyor musunuz? (Raporlanmaz)")) return;
+            if(!confirm("Ödeme henüz alınmadı! Yine de masayı kapatmak istiyor musunuz? (Ciroya eklenmez)")) return;
         }
         remove(ref(db, 'aktif_masalar/' + id));
     }
 
-    function raporKaydet(isim, tutar, yontem) {
+    // Rapor kaydederken detay metnini de dahil ettik
+    function raporKaydet(isim, tutar, yontem, detay) {
         push(ref(db, 'raporlar'), {
-            isim, tutar, yontem,
+            isim: isim, 
+            tutar: tutar, 
+            yontem: yontem,
+            detay: detay || "Detay yok",
             saat: new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'}),
             tarih: new Date().toISOString().split('T')[0]
         });
@@ -219,11 +251,18 @@
                     let r = data[key];
                     if(r.tarih >= baslangic && r.tarih <= bitis) {
                         if(r.yontem === "NAKİT") n += r.tutar; else k += r.tutar;
-                        liste.innerHTML += `<div class="accordion-header"><span>${r.saat} | ${r.isim} | ${r.yontem}</span><span>${r.tutar}₺ <button class="btn-delete" onclick="raporSil('${key}')">X</button></span></div>`;
+                        liste.innerHTML += `
+                        <div>
+                            <div class="accordion-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                                <span><b>${r.saat}</b> | ${r.isim} | ${r.yontem}</span>
+                                <span>${r.tutar}₺ <button class="btn-delete" onclick="event.stopPropagation(); raporSil('${key}')">X</button></span>
+                            </div>
+                            <div class="accordion-content">${r.detay}</div>
+                        </div>`;
                     }
                 });
             }
-            ozet.innerHTML = `<div class="rapor-ozet-box">💵 Nakit: <b>${n}₺</b><br>💳 Kart: <b>${k}₺</b><br>💰 Toplam: <b>${n+k}₺</b></div>`;
+            ozet.innerHTML = `<div class="rapor-ozet-box">💵 Nakit: <b style="color:#22c55e;">${n}₺</b><br>💳 Kart: <b style="color:#3b82f6;">${k}₺</b><br>💰 Toplam: <b style="font-size:18px;">${n+k}₺</b></div>`;
         });
     }
 
