@@ -16,19 +16,18 @@
         .btn:active { transform: scale(0.98); }
         .btn-vr { background: #2563eb; } .btn-vr:hover { background: #1d4ed8; }
         .btn-pay { background: #8e44ad; margin-top: 15px; border: 1px solid #a855f7; }
-        .btn-pay:hover { background: #7b39a1; }
         input, select { background: #252525; color: white; border: 1px solid #444; padding: 12px; width: 100%; margin: 8px 0; border-radius: 8px; box-sizing: border-box; }
-        h3 { border-bottom: 1px solid #333; padding-bottom: 10px; color: #00fbff; }
+        h3 { border-bottom: 1px solid #333; padding-bottom: 10px; color: #00fbff; margin-top: 0; }
         .ozet-text { font-size: 14px; color: #aaa; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h3>⚙️ Ayarlar</h3>
-    <label>30 Dakika Fiyatı (₺)</label>
+    <h3>⚙️ Fiyatlar</h3>
+    <label>30 Dakika (₺)</label>
     <input type="number" id="f-30" value="250">
-    <label>60 Dakika Fiyatı (₺)</label>
+    <label>60 Dakika (₺)</label>
     <input type="number" id="f-60" value="450">
     
     <h3 style="margin-top: 30px;">☕ Kantin</h3>
@@ -38,23 +37,22 @@
         <option value="3">Masa 3</option><option value="4">Masa 4</option>
         <option value="5">Masa 5</option><option value="6">Masa 6</option>
     </select>
-    <button class="btn" style="background:#d97706" onclick="urunEkle()">➕ İçecek Ekle (20₺)</button>
+    <button class="btn" style="background:#d97706" id="btn-urun-ekle">➕ İçecek Ekle (20₺)</button>
     
-    <div style="margin-top: 50px; font-size: 12px; color: #444;">Bulut Bağlantısı: Aktif ✅</div>
+    <div style="margin-top: 50px; font-size: 12px; color: #444;">Bulut Durumu: <span id="db-status">Bağlanıyor...</span></div>
 </div>
 
 <div id="main">
-    <h1 style="margin: 0 0 25px 0; display: flex; align-items: center; gap: 10px;">
-        <span style="color: #00fbff;">🎮 vr-kafe-panel</span>
-    </h1>
+    <h1 style="margin: 0 0 25px 0; color: #00fbff;">🎮 vr-kafe-panel</h1>
     <div class="grid" id="cihazlar"></div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+<script type="module">
+    // Firebase Modülleri
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-<script>
-    // Firebase Yapılandırman
+    // Senin Firebase Bilgilerin
     const firebaseConfig = {
         apiKey: "AIzaSyCGk6ca-X8wCbLB7xOu5imiH6g23ZmazyQ",
         authDomain: "vr-kafe-panel.firebaseapp.com",
@@ -66,23 +64,23 @@
     };
 
     // Firebase Başlat
-    firebase.initializeApp(firebaseConfig);
-    const rtdb = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    document.getElementById('db-status').innerText = "Aktif ✅";
 
     let cihazVerileri = {};
 
     // Arayüzü Oluştur
-    function cihazlariOlustur() {
+    window.cihazlariOlustur = function() {
         const grid = document.getElementById('cihazlar');
         grid.innerHTML = ''; 
         for(let i=1; i<=6; i++) {
             if(!cihazVerileri[i]) cihazVerileri[i] = { bitis_ms: 0, toplam: 0 };
-            
             grid.innerHTML += `
                 <div class="card" id="card-${i}">
                     <h2 style="margin:0;">İstasyon #${i}</h2>
                     <div class="timer" id="time-${i}">00:00</div>
-                    <div class="ozet-text" id="ozet-${i}">Mevcut Borç: <b>${cihazVerileri[i].toplam}₺</b></div>
+                    <div class="ozet-text">Borç: <b id="borc-${i}">${cihazVerileri[i].toplam}</b>₺</div>
                     <button class="btn btn-vr" onclick="vrEkle(${i},30)">+30 Dakika</button>
                     <button class="btn btn-vr" onclick="vrEkle(${i},60)">+60 Dakika</button>
                     <button class="btn btn-pay" onclick="masaKapat(${i})">MASAYI SIFIRLA</button>
@@ -91,84 +89,68 @@
     }
 
     // Süre Ekle
-    function vrEkle(id, dk) {
+    window.vrEkle = function(id, dk) {
         let fiyat = dk === 30 ? parseInt(document.getElementById('f-30').value) : parseInt(document.getElementById('f-60').value);
         let simdi = new Date().getTime();
-        let temelSüre = (cihazVerileri[id].bitis_ms > simdi) ? cihazVerileri[id].bitis_ms : simdi;
+        let temel = (cihazVerileri[id].bitis_ms > simdi) ? cihazVerileri[id].bitis_ms : simdi;
         
-        cihazVerileri[id].bitis_ms = temelSüre + (dk * 60 * 1000);
+        cihazVerileri[id].bitis_ms = temel + (dk * 60 * 1000);
         cihazVerileri[id].toplam += fiyat;
         
         firebaseGuncelle(id);
     }
 
     // Ürün Ekle
-    function urunEkle() {
+    document.getElementById('btn-urun-ekle').onclick = function() {
         let id = document.getElementById('hedef-masa').value;
-        cihazVerileri[id].toplam += 20; // Standart içecek fiyatı
+        cihazVerileri[id].toplam += 20;
         firebaseGuncelle(id);
-    }
+    };
 
     // Firebase'e Gönder
     function firebaseGuncelle(id) {
-        rtdb.ref('aktif_masalar/' + id).set({
+        set(ref(db, 'aktif_masalar/' + id), {
             bitis_ms: cihazVerileri[id].bitis_ms,
             toplam: cihazVerileri[id].toplam
         });
     }
 
-    // Masayı Kapat/Sıfırla
-    async function masaKapat(id) {
-        if(!confirm(`Masa #${id} sıfırlanacak. Emin misiniz?`)) return;
-        await rtdb.ref('aktif_masalar/' + id).remove();
-        cihazVerileri[id] = { bitis_ms: 0, toplam: 0 };
-        cihazlariOlustur();
+    // Masa Sıfırla
+    window.masaKapat = function(id) {
+        if(!confirm(`Masa #${id} sıfırlanacak?`)) return;
+        remove(ref(db, 'aktif_masalar/' + id));
     }
 
-    // Sayaç Mantığı
-    function sayacYonetimi() {
+    // Sayaç Döngüsü
+    setInterval(() => {
         for(let i=1; i<=6; i++) {
-            if(!cihazVerileri[i] || cihazVerileri[i].bitis_ms === 0) {
-                document.getElementById(`time-${i}`).innerText = "00:00";
-                continue;
-            }
-            
-            let simdi = new Date().getTime();
-            let fark = cihazVerileri[i].bitis_ms - simdi;
-            let kalan_saniye = Math.floor(fark / 1000);
-            
             const tEl = document.getElementById(`time-${i}`);
             const cEl = document.getElementById(`card-${i}`);
-            
-            let mutlak = Math.abs(kalan_saniye);
+            if(!tEl || !cihazVerileri[i] || cihazVerileri[i].bitis_ms === 0) continue;
+
+            let fark = cihazVerileri[i].bitis_ms - new Date().getTime();
+            let saniye = Math.floor(fark / 1000);
+            let mutlak = Math.abs(saniye);
             let dak = Math.floor(mutlak / 60);
             let san = mutlak % 60;
-            
-            tEl.innerText = (kalan_saniye < 0 ? "-" : "") + `${dak}:${san < 10 ? '0'+san : san}`;
-            
-            if(kalan_saniye < 0) cEl.classList.add('sure-doldu');
-            else cEl.classList.remove('sure-doldu');
-        }
-    }
 
-    // Firebase'den Verileri Dinle (Canlı Güncelleme)
-    rtdb.ref('aktif_masalar').on('value', (snapshot) => {
+            tEl.innerText = (saniye < 0 ? "-" : "") + `${dak}:${san < 10 ? '0'+san : san}`;
+            if(saniye < 0) cEl.classList.add('sure-doldu'); else cEl.classList.remove('sure-doldu');
+        }
+    }, 1000);
+
+    // Canlı Dinleme (Veritabanı değişince anında güncelle)
+    onValue(ref(db, 'aktif_masalar'), (snapshot) => {
         const data = snapshot.val();
-        // Verileri temizle ve güncelle
         for(let i=1; i<=6; i++) {
             if(data && data[i]) {
-                cihazVerileri[i] = { 
-                    bitis_ms: data[i].bitis_ms, 
-                    toplam: data[i].toplam || 0 
-                };
+                cihazVerileri[i] = data[i];
             } else {
                 cihazVerileri[i] = { bitis_ms: 0, toplam: 0 };
             }
         }
         cihazlariOlustur();
     });
-
-    setInterval(sayacYonetimi, 1000);
 </script>
 </body>
 </html>
